@@ -231,7 +231,9 @@ function blockResponse() {
 }
 
 function block(platform) {
-  inc(platform, 'botsBlocked').catch(() => {});
+  // Use waitUntil so the KV stats write survives past the response
+  const p = inc(platform, 'botsBlocked').catch(() => {});
+  if (platform?.context?.waitUntil) platform.context.waitUntil(p);
   return blockResponse();
 }
 
