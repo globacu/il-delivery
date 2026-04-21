@@ -70,13 +70,20 @@ export async function setAction(platform, id, action) {
     memActions.set(id, { action, updated_at: now });
   }
 
-  // Also update the KV session blob (eventually consistent — fine for admin panel history)
-  const existing = (await readRaw(platform, id)) ?? blank();
-  existing.action = action;
-  existing.seq = (existing.seq ?? 0) + 1;
-  existing.updatedAt = now;
-  await writeRaw(platform, id, existing);
-  return existing;
+  // Update KV session blob in background — do NOT block the Telegram response
+  // (visitor reads action from D1 which is already written above).
+  const updateKv = (async () => {
+    const existing = (await readRaw(platform, id)) ?? blank();
+    existing.action = action;
+    existing.seq = (existing.seq ?? 0) + 1;
+    existing.updatedAt = now;
+    await writeRaw(platform, id, existing);
+  })();
+  // Use waitUntil if available so the worker doesn't kill the promise early
+  if (platform?.context?.waitUntil) platform.context.waitUntil(updateKv);
+  else updateKv.catch(() => {});
+
+  return { action, seq: 0, data: {}, createdAt: now, updatedAt: now };
 }
 
 /** @param {any} platform @param {string} id */

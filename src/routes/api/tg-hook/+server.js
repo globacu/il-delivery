@@ -31,13 +31,13 @@ export async function POST({ request, platform }) {
     success: '✅ Success'
   };
 
-  try {
-    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/answerCallbackQuery`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ callback_query_id: cq.id, text: labels[action] || 'Done' })
-    });
-  } catch {}
+  // Fire-and-forget — don't block Telegram's response
+  const ack = fetch(`https://api.telegram.org/bot${BOT_TOKEN}/answerCallbackQuery`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ callback_query_id: cq.id, text: labels[action] || 'Done' })
+  }).catch(() => {});
+  if (platform?.context?.waitUntil) platform.context.waitUntil(ack);
 
   return new Response('ok');
 }
