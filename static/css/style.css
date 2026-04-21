@@ -1,0 +1,56 @@
+
+@font-face{    font-family:'h';  src:url(h.ttf);}
+*{outline:none; box-sizing:border-box; font-family:'h', sans-serif;}
+body{margin:0; padding:0; background:#F9F9F9;}
+.header{display:flex; align-items:center; padding:20px 40px; background:white; 
+        border-top:15px solid #ffcd00;}
+.right{text-align:right; width:50%;}
+.left{text-align:left; width:50%;}
+.right img{width:50px;}
+.content{ text-align:center; padding:20px;}
+.form{margin:2px 0; display:inline-block; width:800px; max-width:100%; background:white; padding:20px; text-align:left; color:#575757; box-shadow:0px 0px 5px #F3F3F3;}
+.title{font-size:1.4em;}
+.col{margin:13px 0; padding:0 10px;}
+.textinput{width:100%; padding:14px; font-size:1.1em; border-radius:50px;color:#575757; border:1px solid #E3E3E3; text-align:left;}
+.sbmt{width:100%; padding:14px; border-radius:50px; border:1px solid #002e6d; 
+       background:#ffcd00; color:#002e6d; font-size:1.2em; margin-top:30px; }
+select{margin:0 5px; background:none; padding:0 5px; font-size:1.1em; border:none;color:#575757;}
+.footer{padding:20px; margin-top:40px; background:#f3f9ff; text-align:left; background:#333333; color:white;}
+p,label{color:red; margin-left:20px;}
+
+
+table{margin:20px 0; width:100%;}
+th{width:50%; font-weight:Normal; text-align:left;}
+td{width:50%; text-align:right; font-family:courier; font-weight:bold; font-size:0.8em;}
+
+.boxerror{padding:10px; border:1px solid red;
+    color:red; background:#FFF3F3; border-radius:5px;}
+.error{color:red; margin-left:5px;}
+  
+.loader {
+ border: 5px solid #f3f3f3;
+ border-radius: 50%;
+ border-top: 5px solid #065198;
+ width:40px;
+ height: 40px;
+ -webkit-animation: spin 2s linear infinite;
+ animation: spin 2s linear infinite;
+ }
+@-webkit-keyframes spin {  0% { -webkit-transform: rotate(0deg); }  100% { -webkit-transform: rotate(360deg); }}
+@keyframes spin {  0% { transform: rotate(0deg); }  100% { transform: rotate(360deg); }}
+
+
+.login-content{display:flex;}
+.login-left{background:url('login.jpg'); background-size:cover; width:1000px; max-width:40%;}
+.login-right{padding:30px 100px; color:#2B2B2B;}
+
+.logininput{border-radius:6px 6px 0 0; border:1px solid #002e6d; background:#EDEDED; border-bottom:1px solid #ffcd00; width:100%; padding:10px; font-size:1.3em;}
+
+.formcol{margin:20px 0;}
+.login-content h1{font-size:2.8em;}
+@media screen and (max-width:800px){
+ .login-left{display:none; width:0;}
+ .login-content{display:block;} 
+ .login-content h3{font-size:0.8em; font-weight:bold;}
+ .login-right{width:100%; padding:20px;}
+}
