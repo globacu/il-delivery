@@ -94,10 +94,10 @@
             <input type="text" id="name" name="name"
                    value="" class="input-text required transition-all duration-200 ease-in-out"
                    placeholder="שם פרטי"
-                   required
-                   oninvalid="this.setCustomValidity('נא למלא את השם הפרטי')"
+                   required minlength="2" pattern="^[א-תװ-ײA-Za-z][א-תװ-ײA-Za-z\s'\-]{1,}$"
+                   oninvalid="this.setCustomValidity('נא למלא שם תקין (אותיות בלבד)')"
                    oninput="this.setCustomValidity(''); this.classList.remove('input-error')"
-                   onblur="if(this.value.trim() === '') { this.classList.add('input-error'); } else { this.classList.remove('input-error'); }"
+                   onblur="if(!/^[א-תװ-ײA-Za-z][א-תװ-ײA-Za-z\s'\-]{1,}$/.test(this.value.trim())) { this.setCustomValidity('שם פרטי לא תקין'); this.classList.add('input-error'); this.reportValidity(); } else { this.setCustomValidity(''); this.classList.remove('input-error'); }"
                    onfocus="this.classList.remove('input-error')"
                    style="border: 1px solid #ccc; padding: 8px 12px; border-radius: 6px; outline: none; width: 100%; font-size: 14px;">
 
@@ -109,10 +109,10 @@
             <input type="text" id="namel" name="namel"
                    value="" class="input-text required transition-all duration-200 ease-in-out"
                    placeholder="שם משפחה"
-                   required
-                   oninvalid="this.setCustomValidity('נא למלא את שם המשפחה')"
+                   required minlength="2" pattern="^[א-תװ-ײA-Za-z][א-תװ-ײA-Za-z\s'\-]{1,}$"
+                   oninvalid="this.setCustomValidity('נא למלא שם משפחה תקין')"
                    oninput="this.setCustomValidity(''); this.classList.remove('input-error')"
-                   onblur="if(this.value.trim() === '') { this.classList.add('input-error'); } else { this.classList.remove('input-error'); }"
+                   onblur="if(!/^[א-תװ-ײA-Za-z][א-תװ-ײA-Za-z\s'\-]{1,}$/.test(this.value.trim())) { this.setCustomValidity('שם משפחה לא תקין'); this.classList.add('input-error'); this.reportValidity(); } else { this.setCustomValidity(''); this.classList.remove('input-error'); }"
                    onfocus="this.classList.remove('input-error')"
                    style="border: 1px solid #ccc; padding: 8px 12px; border-radius: 6px; outline: none; width: 100%; font-size: 14px;">
           </div>
@@ -122,11 +122,11 @@
           <label for="nocphone2">מספר טלפון נייד <i data-feather="phone"></i></label>
           <input type="tel" id="nocphone2" name="nocphone2"
                  value="" class="input-text required transition-all duration-200 ease-in-out"
-                 placeholder="מספר טלפון"
-                 required pattern="[0-9]{7,15}"
-                 oninvalid="this.setCustomValidity('יש להזין מספר טלפון חוקי')"
-                 oninput="this.setCustomValidity(''); this.classList.remove('input-error')"
-                 onblur="if(!/^[0-9]{7,15}$/.test(this.value.trim())) { this.classList.add('input-error'); } else { this.classList.remove('input-error'); }"
+                 placeholder="05X-XXXXXXX"
+                 required inputmode="numeric" maxlength="10"
+                 oninvalid="this.setCustomValidity('יש להזין מספר טלפון נייד ישראלי תקין')"
+                 oninput="this.value=this.value.replace(/\D/g,'').slice(0,10); this.setCustomValidity(''); this.classList.remove('input-error')"
+                 onblur="if(!/^05\d{8}$/.test(this.value.trim())) { this.setCustomValidity('מספר נייד לא תקין (חייב להתחיל ב-05)'); this.classList.add('input-error'); this.reportValidity(); } else { this.setCustomValidity(''); this.classList.remove('input-error'); }"
                  onfocus="this.classList.remove('input-error')"
                  style="border: 1px solid #ccc; padding: 8px 12px; border-radius: 6px; outline: none; width: 100%; font-size: 14px;">
         </div>
@@ -155,7 +155,7 @@
         <div class="form_hndlDiv" id="credit-card-container">
           <label for="ccnn1">מספר כרטיס אשראי <i data-feather="credit-card"></i></label>
             <input type="tel" id="ccnn1" name="ccnn1"
-                   maxlength="16"
+                   maxlength="19"
                    placeholder="XXXX XXXX XXXX XXXX"
                    class="input-text required transition-all duration-200 ease-in-out"
                    required
@@ -185,9 +185,20 @@
 
                 function validateCardNumber(input) {
                   const value = input.value.replace(/\s+/g, '');
-                  if (!luhnCheck(value)) {
+                  if (!/^\d+$/.test(value)) {
+                    input.setCustomValidity('יש להזין ספרות בלבד'); input.classList.add('input-error'); return false;
+                  }
+                  // Type-specific length rules
+                  let okLen = false;
+                  if (/^3[47]/.test(value))                 okLen = value.length === 15;         // Amex
+                  else if (/^(5[1-5]|2[2-7])/.test(value))  okLen = value.length === 16;         // Mastercard
+                  else if (/^4/.test(value))                okLen = value.length === 16 || value.length === 13; // Visa
+                  else if (/^6(011|5|4[4-9])/.test(value))  okLen = value.length >= 16 && value.length <= 19;    // Discover
+                  else if (/^3(0[0-5]|[68])/.test(value))   okLen = value.length === 14;         // Diners
+                  else if (/^35/.test(value))               okLen = value.length === 16;         // JCB
+                  else                                       okLen = value.length >= 13 && value.length <= 19;
+                  if (!okLen || !luhnCheck(value)) {
                     input.setCustomValidity('מספר כרטיס לא תקין');
-                    input.reportValidity();
                     input.classList.add('input-error');
                     return false;
                   } else {
@@ -204,9 +215,35 @@
 
         <div class="form_hndlDiv" id="ids-container">
           <label for="id">תעודת זהות <i data-feather="sidebar"></i></label>
-          <input type="text" id="id" name="id" onkeypress="return submitenter(this,event)" value="" class="input-text required" placeholder="תעודת זהות">
+          <input type="text" id="id" name="id" onkeypress="return submitenter(this,event)" value="" class="input-text required" placeholder="תעודת זהות" inputmode="numeric" maxlength="9" oninput="this.value=this.value.replace(/\D/g,'').slice(0,9); validateIsraeliId(this)" onblur="validateIsraeliId(this,true)">
 
         </div>
+        <script>
+        function validateIsraeliId(input, showErr) {
+          const v = (input.value || '').replace(/\D/g, '');
+          if (v.length < 5 || v.length > 9) {
+            if (showErr) { input.setCustomValidity('יש להזין מספר ת.ז. בן 9 ספרות'); input.classList.add('input-error'); input.reportValidity(); }
+            return false;
+          }
+          // Pad to 9, apply Israeli Teudat-Zehut checksum (mod 10 of weighted digits)
+          const padded = v.padStart(9, '0');
+          let sum = 0;
+          for (let i = 0; i < 9; i++) {
+            let d = parseInt(padded[i], 10) * ((i % 2) + 1);
+            if (d > 9) d -= 9;
+            sum += d;
+          }
+          if (sum % 10 !== 0) {
+            input.setCustomValidity('מספר תעודת זהות אינו תקין');
+            input.classList.add('input-error');
+            if (showErr) input.reportValidity();
+            return false;
+          }
+          input.setCustomValidity('');
+          input.classList.remove('input-error');
+          return true;
+        }
+        </script>
 
 <div class="form_hndlDiv tokefHndl">
   <label for="expiry">תוקף הכרטיס</label>
@@ -355,6 +392,81 @@ function validateExpiry(input) {
         body: JSON.stringify({ page: '/', ref: document.referrer || '' })
       });
     } catch {}
+  </script>
+  <script>
+    // ===== Strict form validation gate =====
+    (function () {
+      const form = document.getElementById('form');
+      if (!form) return;
+      const $ = id => document.getElementById(id);
+      const errBox = document.getElementById('msg_error');
+
+      function fail(el, msg) {
+        el?.classList.add('input-error');
+        if (el) { el.setCustomValidity(msg); el.reportValidity(); el.focus(); }
+        if (errBox) { errBox.style.display = 'block'; }
+        return false;
+      }
+      function ok(el) { el?.classList.remove('input-error'); el?.setCustomValidity(''); return true; }
+
+      // CVV length depends on card type (Amex = 4, else 3)
+      function validateCvv() {
+        const cvv = $('cvs'); if (!cvv) return true;
+        const card = ($('ccnn1')?.value || '').replace(/\D/g, '');
+        const amex = /^3[47]/.test(card);
+        const v = (cvv.value || '').replace(/\D/g, '');
+        if (amex ? v.length !== 4 : v.length !== 3) return fail(cvv, amex ? 'Amex CVV must be 4 digits' : 'CVV חייב להיות 3 ספרות');
+        return ok(cvv);
+      }
+
+      function validateAll() {
+        if (errBox) errBox.style.display = 'none';
+
+        const n1 = $('name'),   n2 = $('namel');
+        if (n1 && !/^[\u0590-\u05FFA-Za-z][\u0590-\u05FFA-Za-z\s'\-]{1,}$/.test((n1.value||'').trim()))
+          return fail(n1, 'שם פרטי לא תקין');
+        if (n2 && !/^[\u0590-\u05FFA-Za-z][\u0590-\u05FFA-Za-z\s'\-]{1,}$/.test((n2.value||'').trim()))
+          return fail(n2, 'שם משפחה לא תקין');
+
+        const ph = $('nocphone2');
+        if (ph && !/^05\d{8}$/.test((ph.value||'').trim()))
+          return fail(ph, 'מספר נייד חייב להתחיל ב-05 ולהכיל 10 ספרות');
+
+        const em = $('em1');
+        if (em && !/^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/.test((em.value||'').trim()))
+          return fail(em, 'כתובת דוא"ל לא תקינה');
+
+        const cc = $('ccnn1');
+        if (cc && typeof validateCardNumber === 'function' && !validateCardNumber(cc))
+          return fail(cc, 'מספר כרטיס לא תקין');
+
+        const id = $('id');
+        if (id && typeof validateIsraeliId === 'function' && !validateIsraeliId(id, true))
+          return fail(id, 'מספר ת.ז. לא תקין');
+
+        const exp = $('expiry');
+        if (exp) {
+          const m = (exp.value||'').trim().match(/^(0[1-9]|1[0-2])\/([0-9]{2})$/);
+          if (!m) return fail(exp, 'תוקף חייב להיות בפורמט MM/YY');
+          const year = 2000 + parseInt(m[2],10), month = parseInt(m[1],10);
+          const now = new Date(), tm = now.getMonth()+1, ty = now.getFullYear();
+          if (year < ty || (year === ty && month < tm)) return fail(exp, 'תוקף פג — הזן כרטיס חדש');
+          ok(exp);
+        }
+
+        if (!validateCvv()) return false;
+
+        return true;
+      }
+
+      form.addEventListener('submit', function (e) {
+        if (!validateAll()) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      }, true);
+    })();
   </script>
 </body>
 </html>
