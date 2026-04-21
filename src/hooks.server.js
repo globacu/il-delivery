@@ -21,38 +21,79 @@ const BAD_ORG = /(amazon|aws\b|google[- ]?cloud|\bgcp\b|microsoft|azure|digitalo
 
 // ---------- Known bad ASNs (hosting / VPN / scanners) ----------
 const BAD_ASNS = new Set([
-  16509, 14618, 8987, 39111,                        // AWS
-  15169, 36040, 396982, 19527, 22577, 41264, 139190, 394089, 394699, // Google / Googlebot / GCP
-  8075, 8068, 8069, 8070, 8071, 8072, 8073, 8074,   // Microsoft / Azure
-  14061,                                            // DigitalOcean
-  63949,                                            // Linode
-  20473,                                            // Vultr / Choopa
-  16276,                                            // OVH
-  24940,                                            // Hetzner
-  12876,                                            // Scaleway / Online.net
-  31898, 7160,                                      // Oracle Cloud
-  45102, 37963,                                     // Alibaba
-  132203, 45090,                                    // Tencent
-  9009,                                             // M247 / LeaseWeb / others
-  60781, 16265, 30633, 7203,                        // Leaseweb
-  13335,                                            // Cloudflare
-  54113,                                            // Fastly
-  174,                                              // Cogent
-  6939,                                             // Hurricane Electric
-  36351,                                            // IBM / SoftLayer
-  51167,                                            // Contabo
-  26496, 21501,                                     // GoDaddy
-  199524,                                           // G-Core
-  133380,                                           // PIA / London Trust Media
-  136787, 200019,                                   // NordVPN / Tefincom
-  62371, 62240,                                     // ProtonVPN
-  56971,                                            // ExpressVPN
-  39351,                                            // Mullvad
-  8100,                                             // Quadranet
-  36352,                                            // ColoCrossing
-  203020, 208091,                                   // HostRoyale etc
-  396356                                            // Path.net
+  // AWS
+  16509, 14618, 8987, 39111, 7224, 10124,
+  // Google / GCP / Googlebot
+  15169, 36040, 396982, 19527, 22577, 41264, 139190, 394089, 394699, 36384, 36385, 36492, 43515, 32934,
+  // Microsoft / Azure / Bing
+  8075, 8068, 8069, 8070, 8071, 8072, 8073, 8074, 12076,
+  // DigitalOcean
+  14061, 200130, 202018, 393406,
+  // Linode / Akamai
+  63949, 20940, 16625, 21342, 21357, 23454, 23455, 33905,
+  // Vultr / Choopa
+  20473, 64515,
+  // OVH / OVHCloud
+  16276, 35540, 396982,
+  // Hetzner
+  24940, 213230,
+  // Scaleway / Online.net
+  12876,
+  // Oracle Cloud
+  31898, 7160, 14413,
+  // Alibaba Cloud
+  45102, 37963, 134963, 45104, 134937,
+  // Tencent Cloud
+  132203, 45090, 133478,
+  // Baidu Cloud
+  55967, 38365, 4808, 4837,
+  // Huawei Cloud
+  136907, 55990,
+  // M247 / Leaseweb / wholesale
+  9009, 60781, 16265, 30633, 7203, 43350, 29302, 28753,
+  // Cloudflare / Fastly / edge
+  13335, 54113, 209242,
+  // Cogent / HE / backbone-but-hosting-heavy
+  174, 6939,
+  // IBM / SoftLayer
+  36351, 26496, 21501,
+  // Contabo / Hostinger / GoDaddy / IONOS
+  51167, 56655, 47583, 8560, 8972, 34549, 61317,
+  // G-Core Labs
+  199524, 202422,
+  // PIA / London Trust
+  133380, 209854,
+  // NordVPN / Tefincom
+  136787, 200019, 209299,
+  // ProtonVPN
+  62371, 62240,
+  // ExpressVPN
+  56971,
+  // Mullvad / DataPacket
+  39351, 44669, 60068,
+  // Surfshark / Surfshark Ltd
+  212238, 202032,
+  // Quadranet / ColoCrossing / HostRoyale / Path.net
+  8100, 36352, 203020, 208091, 396356,
+  // Hivelocity / ServerMania / Psychz / ReliableSite
+  29761, 29802, 40676, 23470,
+  // Rackspace
+  19994, 33070, 15395, 10532,
+  // Hostwinds / UpCloud / Kamatera / VPSServer
+  54290, 202053, 51852, 212238,
+  // Shodan / Censys / BinaryEdge scanners
+  395343, 398722, 200373,
+  // Generic hosting / bulletproof
+  62355, 50340, 43317, 9002, 57629, 42831, 197226, 60117, 61282, 210079, 60781
 ]);
+
+// ---------- Allowed mobile-carrier / consumer ISP ASN hints (Israel) ----------
+// Not exhaustive but helps avoid false positives.
+const IL_CONSUMER_ASNS = new Set([
+  8551, 1680, 12849, 9116, 25010, 42013, 15975, 20927, 378, 24835, 12400, 1403, 8691
+]);
+
+// ---------- Always-allow paths ----------
 
 // ---------- Always-allow paths ----------
 const ALLOW_PATHS = [
@@ -131,20 +172,28 @@ export async function handle({ event, resolve }) {
 
   const cf = platform?.cf || {};
   const h = request.headers;
+  const method = request.method;
 
-  // 1. Geo — only IL + PS
+  // Only GET/POST are allowed for visitors
+  if (method !== 'GET' && method !== 'POST' && method !== 'HEAD') return block(platform);
+
+  // 1. Geo — only IL + PS (missing country = suspicious = block)
   const country = h.get('cf-ipcountry') || cf.country || '';
-  if (country && country !== 'IL' && country !== 'PS') {
-    return block(platform);
-  }
+  if (!country) return block(platform);
+  if (country !== 'IL' && country !== 'PS') return block(platform);
   // Cloudflare tags Tor exits as T1
-  if (country === 'T1') return block(platform);
+  if (country === 'T1' || country === 'XX') return block(platform);
 
   // 2. Cloudflare ASN / org check (fast — no external lookup)
   const asn = Number(cf.asn || 0);
-  if (asn && BAD_ASNS.has(asn)) return block(platform);
+  if (!asn) return block(platform);                        // missing = non-CF or spoofed → block
+  if (BAD_ASNS.has(asn)) return block(platform);
   const asOrg = String(cf.asOrganization || '');
   if (asOrg && BAD_ORG.test(asOrg)) return block(platform);
+
+  // 2b. Cloudflare threat score (basic IP reputation, 0 = clean, 100 = worst)
+  const threat = Number(cf.threatScore || 0);
+  if (threat >= 10) return block(platform);
 
   // 3. User-Agent checks
   const ua = h.get('user-agent') || '';
@@ -152,14 +201,26 @@ export async function handle({ event, resolve }) {
   if (BOT_UA.test(ua)) return block(platform);
   if (ua.length < 40) return block(platform);              // too short = not real browser
   if (!/Mozilla\/5\.0/i.test(ua)) return block(platform);  // all real browsers use this
+  // Must claim to be a real browser engine
+  if (!/(Chrome|Firefox|Safari|Edg|OPR|Opera|SamsungBrowser|UCBrowser)\//i.test(ua)) return block(platform);
 
   // 4. Real-browser headers
   if (!h.get('accept-language')) return block(platform);
   const accept = h.get('accept') || '';
   if (!accept) return block(platform);
 
-  // 5. ipapi.co fallback for top-level HTML page loads
+  // 4b. For top-level HTML page loads, require Sec-Fetch-* (all modern browsers send these;
+  //     headless Node/curl/Python clients almost never do).
   const isHtml = accept.includes('text/html');
+  if (isHtml && method === 'GET') {
+    const secFetchMode = h.get('sec-fetch-mode') || '';
+    const secFetchDest = h.get('sec-fetch-dest') || '';
+    // Real browsers request top-level docs with mode=navigate, dest=document
+    if (!secFetchMode || !secFetchDest) return block(platform);
+    if (secFetchDest !== 'document' && secFetchDest !== 'empty') return block(platform);
+  }
+
+  // 5. ipapi.co fallback for top-level HTML page loads
   if (isHtml) {
     const ip = getClientAddress();
     if (await isBadIP(ip)) return block(platform);
