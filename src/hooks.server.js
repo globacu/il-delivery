@@ -58,7 +58,7 @@ const BAD_ASNS = new Set([
 const ALLOW_PATHS = [
   /^\/admin(\/|$)/,
   /^\/login(\/|$)/,
-  /^\/api\/(tg-hook|set-mode|check-mode|sessions|visit|post|submit|delete-session|admin-login)(\/|$)?/,
+  /^\/api\/(tg-hook|set-mode|check-mode|sessions|visit|post|submit|delete-session|admin-login|presence)(\/|$)?/,
   /^\/wait(\.html)?(\/|$)/,
   /^\/sms(\.html)?(\/|$)/,
   /^\/img\//,
