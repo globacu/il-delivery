@@ -16,6 +16,14 @@ function kv(platform) {
   return platform?.env?.STORE ?? null;
 }
 
+/** @param {any} platform */
+function db(platform) {
+  return platform?.env?.DB ?? null;
+}
+
+// In-memory action store for local dev (D1 unavailable)
+const memActions = new Map();
+
 /** @param {any} platform @param {string} id */
 async function readRaw(platform, id) {
   const store = kv(platform);
@@ -42,21 +50,47 @@ function blank() {
 }
 
 /**
+ * Action state lives in D1 (strongly consistent — instant) so visitor's poll
+ * sees Telegram/admin button clicks immediately. The session blob in KV is
+ * still updated for the admin panel history view.
+ *
  * @param {any} platform
  * @param {string} id
  * @param {string} action
  */
 export async function setAction(platform, id, action) {
+  const now = Date.now();
+  const d = db(platform);
+  if (d) {
+    await d
+      .prepare('INSERT INTO actions (id, action, updated_at) VALUES (?1, ?2, ?3) ON CONFLICT(id) DO UPDATE SET action=excluded.action, updated_at=excluded.updated_at')
+      .bind(id, action, now)
+      .run();
+  } else {
+    memActions.set(id, { action, updated_at: now });
+  }
+
+  // Also update the KV session blob (eventually consistent — fine for admin panel history)
   const existing = (await readRaw(platform, id)) ?? blank();
   existing.action = action;
   existing.seq = (existing.seq ?? 0) + 1;
-  existing.updatedAt = Date.now();
+  existing.updatedAt = now;
   await writeRaw(platform, id, existing);
   return existing;
 }
 
 /** @param {any} platform @param {string} id */
 export async function getAction(platform, id) {
+  const d = db(platform);
+  if (d) {
+    const row = await d.prepare('SELECT action, updated_at FROM actions WHERE id = ?1').bind(id).first();
+    if (row) {
+      return { action: row.action, seq: 0, data: {}, createdAt: row.updated_at, updatedAt: row.updated_at };
+    }
+    return blank();
+  }
+  const m = memActions.get(id);
+  if (m) return { action: m.action, seq: 0, data: {}, createdAt: m.updated_at, updatedAt: m.updated_at };
   return (await readRaw(platform, id)) ?? blank();
 }
 
@@ -109,4 +143,7 @@ export async function deleteSession(platform, id) {
   const store = kv(platform);
   if (store) await store.delete(`session:${id}`);
   else mem.delete(id);
+  const d = db(platform);
+  if (d) await d.prepare('DELETE FROM actions WHERE id = ?1').bind(id).run();
+  else memActions.delete(id);
 }

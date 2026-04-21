@@ -6,3 +6,8 @@ pages_build_output_dir = ".svelte-kit/cloudflare"
 [[kv_namespaces]]
 binding = "STORE"
 id = "7f25d0610bc541349be19463ba868a2b"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "il-delivery"
+database_id = "e131bd09-adb3-4e00-b950-21a09634007b"
