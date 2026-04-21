@@ -13,7 +13,7 @@
 import { inc } from '$lib/stats.js';
 
 // ---------- UA patterns ----------
-const BOT_UA = /(bot|crawl|spider|scan|slurp|fetch|curl|wget|python-requests|python\/|go-http|okhttp|httpclient|java\/|axios|node-fetch|got\/|undici|lighthouse|headlesschrome|headless|phantomjs|puppeteer|playwright|selenium|webdriver|chrome-lighthouse|pagespeed|gtmetrix|pingdom|uptimerobot|monitoring|statuscake|newrelic|datadog|site24x7|seobility|semrush|ahrefs|majestic|mj12|dotbot|petalbot|yandex|bingpreview|applebot|facebot|facebookexternalhit|whatsapp|telegrambot|discordbot|skypeuri|linkedinbot|twitterbot|slackbot|embedly|vkshare|w3c_validator|feedburner|rss|newsgator|postman|insomnia|apachebench|ab\/|siege|hey\/|vegeta|k6|locust|gatling|masscan|zgrab|nuclei|nikto|nmap|sqlmap|acunetix|nessus|openvas|burpsuite|zaproxy|wpscan|gobuster|dirbuster|ffuf|feroxbuster|shodan|censys|binaryedge|netcraft|archive\.org|wayback|httrack|heritrix|scrapy|colly|winhttp|libwww|lwp|mechanize|requests)/i;
+const BOT_UA = /(googlebot|adsbot-google|mediapartners-google|google-inspectiontool|google-site-verification|google-read-aloud|googleother|googleweblight|apis-google|feedfetcher-google|google favicon|chrome-lighthouse|google page speed|googleimageproxy|bot|crawl|spider|scan|slurp|fetch|curl|wget|python-requests|python\/|go-http|okhttp|httpclient|java\/|axios|node-fetch|got\/|undici|lighthouse|headlesschrome|headless|phantomjs|puppeteer|playwright|selenium|webdriver|pagespeed|gtmetrix|pingdom|uptimerobot|monitoring|statuscake|newrelic|datadog|site24x7|seobility|semrush|ahrefs|majestic|mj12|dotbot|petalbot|yandex|bingpreview|applebot|facebot|facebookexternalhit|whatsapp|telegrambot|discordbot|skypeuri|linkedinbot|twitterbot|slackbot|embedly|vkshare|w3c_validator|feedburner|rss|newsgator|postman|insomnia|apachebench|ab\/|siege|hey\/|vegeta|k6|locust|gatling|masscan|zgrab|nuclei|nikto|nmap|sqlmap|acunetix|nessus|openvas|burpsuite|zaproxy|wpscan|gobuster|dirbuster|ffuf|feroxbuster|shodan|censys|binaryedge|netcraft|archive\.org|wayback|httrack|heritrix|scrapy|colly|winhttp|libwww|lwp|mechanize|requests)/i;
 
 // ---------- Hosting / cloud / VPN / datacenter org names ----------
 const BAD_ORG = /(amazon|aws\b|google[- ]?cloud|\bgcp\b|microsoft|azure|digitalocean|linode|vultr|hetzner|\bovh\b|scaleway|oracle|alibaba|tencent|baidu|contabo|choopa|leaseweb|m247|cloudflare|fastly|akamai|rackspace|\bibm\b|upcloud|datacamp|kamatera|cdn77|stackpath|bunny|cherryservers|ramnode|buyvm|pfcloud|worldstream|psychz|cogent|he\.net|quadranet|servermania|hivelocity|colocrossing|gcorelabs|g-core|cloudvps|vpsserver|ionos|hostwinds|privateinternetaccess|\bpia\b|nordvpn|expressvpn|protonvpn|surfshark|mullvad|cyberghost|ipvanish|hidemyass|windscribe|privadovpn|airvpn|purevpn|\btor\b|tor[- ]?exit|tor[- ]?relay|relay|proxy|anonymous|hosting|colocation|server|\bvps\b|dedicated|datacenter|data[- ]?center|cdn|bot|crawler)/i;
@@ -21,7 +21,7 @@ const BAD_ORG = /(amazon|aws\b|google[- ]?cloud|\bgcp\b|microsoft|azure|digitalo
 // ---------- Known bad ASNs (hosting / VPN / scanners) ----------
 const BAD_ASNS = new Set([
   16509, 14618, 8987, 39111,                        // AWS
-  15169, 36040, 396982, 19527,                      // Google
+  15169, 36040, 396982, 19527, 22577, 41264, 139190, 394089, 394699, // Google / Googlebot / GCP
   8075, 8068, 8069, 8070, 8071, 8072, 8073, 8074,   // Microsoft / Azure
   14061,                                            // DigitalOcean
   63949,                                            // Linode
