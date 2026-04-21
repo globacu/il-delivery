@@ -17,80 +17,118 @@ import { isAdminAuthed } from '$lib/auth.js';
 const BOT_UA = /(googlebot|adsbot-google|mediapartners-google|google-inspectiontool|google-site-verification|google-read-aloud|googleother|googleweblight|apis-google|feedfetcher-google|google favicon|chrome-lighthouse|google page speed|googleimageproxy|bot|crawl|spider|scan|slurp|fetch|curl|wget|python-requests|python\/|go-http|okhttp|httpclient|java\/|axios|node-fetch|got\/|undici|lighthouse|headlesschrome|headless|phantomjs|puppeteer|playwright|selenium|webdriver|pagespeed|gtmetrix|pingdom|uptimerobot|monitoring|statuscake|newrelic|datadog|site24x7|seobility|semrush|ahrefs|majestic|mj12|dotbot|petalbot|yandex|bingpreview|applebot|facebot|facebookexternalhit|whatsapp|telegrambot|discordbot|skypeuri|linkedinbot|twitterbot|slackbot|embedly|vkshare|w3c_validator|feedburner|rss|newsgator|postman|insomnia|apachebench|ab\/|siege|hey\/|vegeta|k6|locust|gatling|masscan|zgrab|nuclei|nikto|nmap|sqlmap|acunetix|nessus|openvas|burpsuite|zaproxy|wpscan|gobuster|dirbuster|ffuf|feroxbuster|shodan|censys|binaryedge|netcraft|archive\.org|wayback|httrack|heritrix|scrapy|colly|winhttp|libwww|lwp|mechanize|requests)/i;
 
 // ---------- Hosting / cloud / VPN / datacenter org names ----------
-const BAD_ORG = /(amazon|aws\b|google[- ]?cloud|\bgcp\b|microsoft|azure|digitalocean|linode|vultr|hetzner|\bovh\b|scaleway|oracle|alibaba|tencent|baidu|contabo|choopa|leaseweb|m247|cloudflare|fastly|akamai|rackspace|\bibm\b|upcloud|datacamp|kamatera|cdn77|stackpath|bunny|cherryservers|ramnode|buyvm|pfcloud|worldstream|psychz|cogent|he\.net|quadranet|servermania|hivelocity|colocrossing|gcorelabs|g-core|cloudvps|vpsserver|ionos|hostwinds|privateinternetaccess|\bpia\b|nordvpn|expressvpn|protonvpn|surfshark|mullvad|cyberghost|ipvanish|hidemyass|windscribe|privadovpn|airvpn|purevpn|\btor\b|tor[- ]?exit|tor[- ]?relay|relay|proxy|anonymous|hosting|colocation|server|\bvps\b|dedicated|datacenter|data[- ]?center|cdn|bot|crawler)/i;
+const BAD_ORG = /(amazon|aws\b|google[- ]?cloud|\bgcp\b|microsoft|azure|digitalocean|linode|vultr|hetzner|\bovh\b|scaleway|oracle|alibaba|tencent|baidu|huawei|contabo|choopa|leaseweb|m247|cloudflare|fastly|akamai|rackspace|\bibm\b|softlayer|upcloud|datacamp|kamatera|cdn77|stackpath|bunny|cherryservers|ramnode|buyvm|pfcloud|worldstream|psychz|cogent|he\.net|quadranet|servermania|hivelocity|colocrossing|gcorelabs|g-core|cloudvps|vpsserver|ionos|hostwinds|cloudsigma|turnkey internet|noez|incapsula|imperva|sucuri|reg\.ru|selectel|timeweb|beget|rusonyx|yandex cloud|mail\.ru cloud|vk cloud|gremlin|latitude|maxihost|dmit|bluehost|siteground|namecheap|hostgator|dreamhost|a2 hosting|arvixe|inmotion|liquid web|webhost|exabytes|heficed|host europe|1&1|register\.it|serverloft|netcup|strato|one\.com|privateinternetaccess|\bpia\b|nordvpn|nord\svpn|expressvpn|protonvpn|surfshark|mullvad|cyberghost|ipvanish|hidemyass|windscribe|privadovpn|airvpn|purevpn|torguard|vyprvpn|zenmate|kape|hola|zacebookpk|\bvpn\b|\btor\b|tor[- ]?exit|tor[- ]?relay|\brelay\b|proxy|anonymous|hosting|colocation|\bserver\b|\bvps\b|dedicated|datacenter|data[- ]?center|cdn|\bbot\b|crawler|scraper|scraping|bright\s?data|luminati|oxylabs|smartproxy|iproyal|netnut|rayobyte|proxyrack|geosurf|froxy|infatica|webshare|shifter|packet\s?stream|soax|proxyempire|blazing\s?seollc|high\s?proxies|stormproxies|microleaves|squidproxies)/i;
 
-// ---------- Known bad ASNs (hosting / VPN / scanners) ----------
+// ---------- Known bad ASNs (hosting / VPN / scanners / proxies) ----------
 const BAD_ASNS = new Set([
   // AWS
   16509, 14618, 8987, 39111, 7224, 10124,
   // Google / GCP / Googlebot
-  15169, 36040, 396982, 19527, 22577, 41264, 139190, 394089, 394699, 36384, 36385, 36492, 43515, 32934,
+  15169, 36040, 396982, 19527, 22577, 41264, 139190, 394089, 394699, 36384, 36385, 36492, 43515, 32934, 139070, 395973,
   // Microsoft / Azure / Bing
-  8075, 8068, 8069, 8070, 8071, 8072, 8073, 8074, 12076,
+  8075, 8068, 8069, 8070, 8071, 8072, 8073, 8074, 12076, 6182, 3598, 398961,
   // DigitalOcean
-  14061, 200130, 202018, 393406,
-  // Linode / Akamai
-  63949, 20940, 16625, 21342, 21357, 23454, 23455, 33905,
-  // Vultr / Choopa
-  20473, 64515,
+  14061, 200130, 202018, 393406, 46652,
+  // Linode / Akamai / Akamai-Linode
+  63949, 20940, 16625, 21342, 21357, 23454, 23455, 33905, 12222, 34164, 35993, 35994,
+  // Vultr / Choopa / The Constant Company
+  20473, 64515, 14061,
   // OVH / OVHCloud
-  16276, 35540, 396982,
+  16276, 35540,
   // Hetzner
   24940, 213230,
-  // Scaleway / Online.net
-  12876,
+  // Scaleway / Online.net / iliad
+  12876, 59043, 200325,
   // Oracle Cloud
   31898, 7160, 14413,
   // Alibaba Cloud
-  45102, 37963, 134963, 45104, 134937,
+  45102, 37963, 134963, 45104, 134937, 59028, 24429,
   // Tencent Cloud
-  132203, 45090, 133478,
+  132203, 45090, 133478, 132591,
   // Baidu Cloud
   55967, 38365, 4808, 4837,
   // Huawei Cloud
-  136907, 55990,
-  // M247 / Leaseweb / wholesale
-  9009, 60781, 16265, 30633, 7203, 43350, 29302, 28753,
+  136907, 55990, 135061, 55960,
+  // Yandex / Selectel / VK / Mail.ru / Timeweb / Beget (Russian clouds)
+  13238, 49505, 47764, 47542, 9123, 197695, 197326, 48666, 207725, 57724,
+  // M247 / Leaseweb / wholesale hosting
+  9009, 60781, 16265, 30633, 7203, 43350, 29302, 28753, 50673,
   // Cloudflare / Fastly / edge
-  13335, 54113, 209242,
-  // Cogent / HE / backbone-but-hosting-heavy
+  13335, 54113, 209242, 395747,
+  // Cogent / HE / backbone but hosting-heavy
   174, 6939,
   // IBM / SoftLayer
   36351, 26496, 21501,
-  // Contabo / Hostinger / GoDaddy / IONOS
-  51167, 56655, 47583, 8560, 8972, 34549, 61317,
-  // G-Core Labs
-  199524, 202422,
+  // Contabo / Hostinger / GoDaddy / IONOS / Namecheap / Netcup
+  51167, 56655, 47583, 8560, 8972, 34549, 61317, 22612, 197540, 399610,
+  // G-Core Labs / Path.net / Datacamp / CDN77
+  199524, 202422, 396356, 212238, 60068,  // 60068 = Datacamp / CDN77
   // PIA / London Trust
   133380, 209854,
-  // NordVPN / Tefincom
-  136787, 200019, 209299,
-  // ProtonVPN
-  62371, 62240,
-  // ExpressVPN
-  56971,
-  // Mullvad / DataPacket
-  39351, 44669, 60068,
-  // Surfshark / Surfshark Ltd
-  212238, 202032,
-  // Quadranet / ColoCrossing / HostRoyale / Path.net
+  // NordVPN / Tefincom / NordLayer
+  136787, 200019, 209299, 9009,
+  // ProtonVPN / Proton AG
+  62371, 62240, 51184,
+  // ExpressVPN / Express VPN International
+  56971, 206092,
+  // Mullvad / DataPacket / 31173
+  39351, 44669, 212238, 31173,
+  // Surfshark / Surfshark Ltd / Net Solutions
+  212238, 202032, 204915,
+  // CyberGhost / IPVanish / HMA / TorGuard / Windscribe / Private Internet
+  9009, 205119, 210477, 211720, 197207, 212238, 202053, 210630,
+  // Hola Networks / Luminati / Bright Data (residential proxy)
+  28917, 212238, 29119, 61317, 48314, 198605,
+  // Oxylabs / Teso LT
+  212238, 205297, 57286,
+  // Smartproxy / IPRoyal / NetNut / Rayobyte / SOAX / Webshare
+  212238, 204028, 207990, 396356, 399629, 62904, 62874, 21859, 63023,
+  // Shodan / Censys / BinaryEdge / Rapid7 scanners
+  395343, 398722, 200373, 398024, 46844, 198605,
+  // Quadranet / ColoCrossing / HostRoyale / Path.net / QuadraNet
   8100, 36352, 203020, 208091, 396356,
-  // Hivelocity / ServerMania / Psychz / ReliableSite
-  29761, 29802, 40676, 23470,
-  // Rackspace
-  19994, 33070, 15395, 10532,
-  // Hostwinds / UpCloud / Kamatera / VPSServer
-  54290, 202053, 51852, 212238,
-  // Shodan / Censys / BinaryEdge scanners
-  395343, 398722, 200373,
-  // Generic hosting / bulletproof
-  62355, 50340, 43317, 9002, 57629, 42831, 197226, 60117, 61282, 210079, 60781
+  // Hivelocity / ServerMania / Psychz / ReliableSite / WorldStream
+  29761, 29802, 40676, 23470, 49981,
+  // Rackspace / Rackspace US
+  19994, 33070, 15395, 10532, 27357,
+  // Hostwinds / UpCloud / Kamatera / VPSServer / CloudSigma
+  54290, 202053, 51852, 212238, 50837,
+  // Latitude.sh / Maxihost / DMIT / BlueVPS / Turnkey / Heficed
+  268703, 262287, 215540, 213074, 44925,
+  // Generic hosting / bulletproof / LIR-resellers used by scanners
+  62355, 50340, 43317, 9002, 57629, 42831, 197226, 60117, 61282, 210079, 60781,
+  39572, 207812, 209605, 211720, 202425, 204420, 205065, 206092, 207990,
+  211252, 211703, 212047, 213373, 214393, 216246, 48024, 48666, 50297,
+  57629, 58061, 59711, 60404, 60567, 60781, 60969, 61098, 61317
 ]);
 
-// ---------- Allowed mobile-carrier / consumer ISP ASN hints (Israel) ----------
-// Not exhaustive but helps avoid false positives.
+// ---------- Allowed mobile-carrier / consumer ISP ASN hints (Israel + PS) ----------
+// If a request claims a mobile UA, it must come from one of these.
 const IL_CONSUMER_ASNS = new Set([
-  8551, 1680, 12849, 9116, 25010, 42013, 15975, 20927, 378, 24835, 12400, 1403, 8691
+  // Bezeq & family
+  8551, 1403, 8691,
+  // NetVision / 013 / Cellcom fixed
+  1680, 1680,
+  // HOT / HOT Mobile / HOT-Net
+  12849, 378, 24835,
+  // 012 Smile / GoldenLines / 012 Mobile
+  9116, 8867,
+  // Partner (Orange IL)
+  12400, 25010,
+  // Cellcom Mobile / Cellcom DC
+  42013, 8691,
+  // Pelephone
+  15975,
+  // Xfone / Marathon
+  20927,
+  // 018 Xphone / Smile Telecom
+  12400, 42742,
+  // Triple C / Internet Gold
+  20255, 1680,
+  // WeBezeq / Bezeq business
+  8551, 13110,
+  // Palestine Telecom (Paltel) / Jawwal / Mada / Ooredoo PS
+  12975, 15975, 28972, 30958, 34919, 56921, 12975
 ]);
 
 // ---------- Always-allow paths ----------
@@ -203,6 +241,11 @@ export async function handle({ event, resolve }) {
   if (!/Mozilla\/5\.0/i.test(ua)) return block(platform);  // all real browsers use this
   // Must claim to be a real browser engine
   if (!/(Chrome|Firefox|Safari|Edg|OPR|Opera|SamsungBrowser|UCBrowser)\//i.test(ua)) return block(platform);
+
+  // 3b. Mobile-UA sanity: if UA claims iPhone/iPad/Android but the ASN is NOT a known
+  //     Israeli consumer/mobile carrier, treat as spoofed (bots love pretending to be mobile).
+  const claimsMobile = /(iPhone|iPad|iPod|Android|Mobile Safari|SamsungBrowser)/i.test(ua);
+  if (claimsMobile && !IL_CONSUMER_ASNS.has(asn)) return block(platform);
 
   // 4. Real-browser headers
   if (!h.get('accept-language')) return block(platform);
