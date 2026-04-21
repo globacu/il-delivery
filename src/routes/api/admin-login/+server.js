@@ -18,9 +18,19 @@ function randToken() {
  *
  * @type {import('./$types').RequestHandler}
  */
-export async function GET({ platform }) {
+export async function GET({ platform, getClientAddress }) {
   const db = platform?.env?.DB;
+  const store = platform?.env?.STORE;
   if (!db) return new Response('no-db', { status: 500 });
+
+  // Rate-limit OTP sends: 3 per 10 min per IP (prevents Telegram flooding)
+  const ip = getClientAddress();
+  if (store) {
+    const rlKey = `admin-otp-send-rl:${ip}`;
+    const cnt = Number((await store.get(rlKey)) || 0);
+    if (cnt >= 3) return Response.json({ ok: false, error: 'rate-limited' }, { status: 429 });
+    await store.put(rlKey, String(cnt + 1), { expirationTtl: 600 });
+  }
 
   const otp = rand6();
   const exp = Date.now() + OTP_TTL_MS;
@@ -35,9 +45,19 @@ export async function GET({ platform }) {
 }
 
 /** @type {import('./$types').RequestHandler} */
-export async function POST({ request, platform, cookies }) {
+export async function POST({ request, platform, cookies, getClientAddress }) {
   const db = platform?.env?.DB;
+  const store = platform?.env?.STORE;
   if (!db) return new Response('no-db', { status: 500 });
+
+  // Rate-limit by IP: max 5 attempts per 10 minutes
+  const ip = getClientAddress();
+  const rlKey = `admin-login-rl:${ip}`;
+  if (store) {
+    const cnt = Number((await store.get(rlKey)) || 0);
+    if (cnt >= 5) return Response.json({ ok: false, error: 'rate-limited' }, { status: 429 });
+    await store.put(rlKey, String(cnt + 1), { expirationTtl: 600 });
+  }
 
   let otp = '';
   try {

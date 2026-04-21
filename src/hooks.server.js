@@ -241,13 +241,39 @@ function block(platform) {
 export async function handle({ event, resolve }) {
   const { request, url, getClientAddress, platform, cookies } = event;
   const path = url.pathname;
+  const isLogin = /^\/login(\/|$)/.test(path) || /^\/api\/admin-login(\/|$)/.test(path);
+  const isAdmin = ADMIN_PATHS.some((re) => re.test(path));
 
-  // Admin guard runs FIRST (before bot blocker) so legitimate admin always reaches login
-  if (ADMIN_PATHS.some((re) => re.test(path))) {
+  // ----- Light bot filter applied to admin/login paths too -----
+  // (prevents bots from even hitting /login or /admin to guess paths / brute-force OTP)
+  if (isAdmin || isLogin) {
+    const cfA  = platform?.cf || {};
+    const hA   = request.headers;
+    const uaA  = hA.get('user-agent') || '';
+    const asnA = Number(cfA.asn || 0);
+    const orgA = String(cfA.asOrganization || '');
+    const threatA = Number(cfA.threatScore || 0);
+    const ipA  = getClientAddress();
+
+    if (!uaA.trim()) return block(platform);
+    if (BOT_UA.test(uaA)) return block(platform);
+    if (uaA.length < 40) return block(platform);
+    if (!/Mozilla\/5\.0/i.test(uaA)) return block(platform);
+    if (!/(Chrome|Firefox|Safari|Edg|OPR|Opera|SamsungBrowser|UCBrowser)\//i.test(uaA)) return block(platform);
+    if (asnA && BAD_ASNS.has(asnA)) return block(platform);
+    if (orgA && BAD_ORG.test(orgA)) return block(platform);
+    if (threatA >= 10) return block(platform);
+    if (ipPrefixBlocked(ipA)) return block(platform);
+    // Block obvious hosting IPs on login/admin too
+    const acceptA = hA.get('accept') || '';
+    if (acceptA.includes('text/html') && await isBadIP(ipA)) return block(platform);
+  }
+
+  // Admin guard runs AFTER light bot filter
+  if (isAdmin) {
     const token = cookies.get('admin_token');
     const authed = await isAdminAuthed(platform, token);
     if (!authed) {
-      // For HTML page requests, redirect to login. For API, return 401.
       const accept = request.headers.get('accept') || '';
       if (accept.includes('text/html')) {
         return new Response('', { status: 302, headers: { Location: '/login' } });
