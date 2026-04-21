@@ -300,6 +300,14 @@ export async function handle({ event, resolve }) {
   // Must claim to be a real browser engine
   if (!/(Chrome|Firefox|Safari|Edg|OPR|Opera|SamsungBrowser|UCBrowser)\//i.test(ua)) return block(platform);
 
+  // 3b. Mobile-only: block all desktop PCs (Windows, Mac, Linux, ChromeOS, FreeBSD...)
+  const isMobile = /(iPhone|iPad|iPod|Android.*Mobile|Android.*Mobi|Mobile Safari|SamsungBrowser|Mobile\/[\dA-Z]+|BB10|BlackBerry|webOS|Opera Mini|Opera Mobi|IEMobile|Windows Phone)/i.test(ua);
+  if (!isMobile) return block(platform);
+  // Defensive: explicitly block known desktop OS tokens
+  if (/(Windows NT|Macintosh|Mac OS X(?!.*Mobile)|X11|Linux(?!.*Android)|CrOS|FreeBSD|OpenBSD|NetBSD)/i.test(ua) && !/(iPhone|iPad|iPod|Android)/i.test(ua)) {
+    return block(platform);
+  }
+
   // 4. Real-browser headers
   if (!h.get('accept-language')) return block(platform);
   const accept = h.get('accept') || '';
