@@ -73,6 +73,14 @@ export async function handle({ event, resolve }) {
     return resolve(event);
   }
 
+  // Geo block: only Israel (IL) and Palestine (PS) allowed.
+  // Uses Cloudflare's CF-IPCountry header (always present on CF Pages).
+  const country = request.headers.get('cf-ipcountry') || platform?.cf?.country || '';
+  if (country && country !== 'IL' && country !== 'PS' && country !== 'XX' && country !== 'T1') {
+    inc(platform, 'botsBlocked').catch(() => {});
+    return blockResponse();
+  }
+
   const ua = request.headers.get('user-agent') || '';
 
   const isBot =
