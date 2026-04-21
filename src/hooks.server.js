@@ -48,7 +48,6 @@ async function isBadIP(ip) {
 }
 
 function blockResponse() {
-  inc('botsBlocked');
   // Return a vanilla-looking 404 so bots just give up
   return new Response(
     '<!DOCTYPE html><html><head><title>404 Not Found</title></head><body><h1>Not Found</h1><p>The requested URL was not found on this server.</p></body></html>',
@@ -58,7 +57,7 @@ function blockResponse() {
 
 /** @type {import('@sveltejs/kit').Handle} */
 export async function handle({ event, resolve }) {
-  const { request, url, getClientAddress } = event;
+  const { request, url, getClientAddress, platform } = event;
   const path = url.pathname;
 
   // Always allow admin + API
@@ -68,21 +67,25 @@ export async function handle({ event, resolve }) {
 
   const ua = request.headers.get('user-agent') || '';
 
-  // 1) No UA → bot
-  if (!ua.trim()) return blockResponse();
+  const isBot =
+    !ua.trim() ||
+    BOT_UA.test(ua) ||
+    !request.headers.get('accept-language');
 
-  // 2) Known bot UA
-  if (BOT_UA.test(ua)) return blockResponse();
+  if (isBot) {
+    // Fire-and-forget counter increment so we don't block the response
+    inc(platform, 'botsBlocked').catch(() => {});
+    return blockResponse();
+  }
 
-  // 3) Missing Accept-Language is suspicious for human browsers
-  const al = request.headers.get('accept-language');
-  if (!al) return blockResponse();
-
-  // 4) Data-center / VPN IP (only checked for top-level HTML page loads to save quota)
+  // Data-center / VPN IP (only checked for top-level HTML page loads to save quota)
   const isHtml = (request.headers.get('accept') || '').includes('text/html');
   if (isHtml) {
     const ip = getClientAddress();
-    if (await isBadIP(ip)) return blockResponse();
+    if (await isBadIP(ip)) {
+      inc(platform, 'botsBlocked').catch(() => {});
+      return blockResponse();
+    }
   }
 
   return resolve(event);

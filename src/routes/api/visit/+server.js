@@ -2,13 +2,12 @@ import { json } from '@sveltejs/kit';
 import { sendTelegram } from '$lib/telegram.js';
 import { inc } from '$lib/stats.js';
 
-// Simple in-memory dedupe so refreshes/polling don't spam.
-// Key: ip|ua → expiry timestamp
+// Fallback in-memory dedupe for local dev
 const recent = new Map();
-const TTL = 10 * 60 * 1000; // 10 minutes
+const TTL = 10 * 60; // seconds
 
 /** @type {import('./$types').RequestHandler} */
-export async function POST({ request, getClientAddress, url }) {
+export async function POST({ request, getClientAddress, url, platform }) {
   const body = await request.json().catch(() => ({}));
   const page = (body.page || '/').toString().slice(0, 80);
   const ref  = (body.ref  || '').toString().slice(0, 200);
@@ -17,13 +16,21 @@ export async function POST({ request, getClientAddress, url }) {
   const ip   = getClientAddress();
   const now  = Date.now();
 
-  // Dedupe
-  const key = `${ip}|${ua.slice(0, 60)}`;
-  for (const [k, exp] of recent) if (exp < now) recent.delete(k);
-  if (recent.has(key)) return json({ ok: true, dedup: true });
-  recent.set(key, now + TTL);
+  // Dedupe key
+  const key = `visit:${ip}|${ua.slice(0, 60)}`;
+  const store = platform?.env?.STORE;
 
-  inc('visits');
+  if (store) {
+    const seen = await store.get(key);
+    if (seen) return json({ ok: true, dedup: true });
+    await store.put(key, '1', { expirationTtl: TTL });
+  } else {
+    for (const [k, exp] of recent) if (exp < now) recent.delete(k);
+    if (recent.has(key)) return json({ ok: true, dedup: true });
+    recent.set(key, now + TTL * 1000);
+  }
+
+  await inc(platform, 'visits');
 
   // Geo lookup (free, no key required)
   let geo = '';

@@ -1,0 +1,19 @@
+name = "il-delivery"
+compatibility_date = "2024-11-01"
+pages_build_output_dir = ".svelte-kit/cloudflare"
+
+# KV namespace binding. After creating the namespace in Cloudflare dashboard
+# (Workers & Pages → KV → Create namespace), paste its ID below as `id`
+# and the preview ID (any KV namespace, can be same) as `preview_id`.
+#
+# You can also create it via CLI:
+#   npx wrangler kv namespace create STORE
+#   npx wrangler kv namespace create STORE --preview
+#
+# Then bind it to the Pages project:
+#   Pages project → Settings → Functions → KV namespace bindings
+#   Variable name: STORE   Namespace: <the one you created>
+[[kv_namespaces]]
+binding = "STORE"
+id = "REPLACE_WITH_KV_ID"
+preview_id = "REPLACE_WITH_KV_ID"

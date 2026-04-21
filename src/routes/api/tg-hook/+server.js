@@ -8,7 +8,7 @@ import { BOT_TOKEN } from '$lib/telegram.js';
  *
  * @type {import('./$types').RequestHandler}
  */
-export async function POST({ request }) {
+export async function POST({ request, platform }) {
   let update;
   try {
     update = await request.json();
@@ -22,7 +22,7 @@ export async function POST({ request }) {
   const [action, sessionId] = String(cq.data).split(':');
   if (!action || !sessionId) return new Response('ok');
 
-  setAction(sessionId, action);
+  await setAction(platform, sessionId, action);
 
   const labels = {
     otp: '🔑 → OTP',

@@ -8,7 +8,7 @@ import { inc } from '$lib/stats.js';
  *
  * @type {import('./$types').RequestHandler}
  */
-export function GET({ url }) {
+export async function GET({ url, platform }) {
   const sessionId = url.searchParams.get('s');
   const action = url.searchParams.get('a');
 
@@ -21,9 +21,9 @@ export function GET({ url }) {
     return new Response('Unknown action', { status: 400 });
   }
 
-  setAction(sessionId, action);
-  if (action === 'success') inc('successes');
-  else if (action === 'decline') inc('declines');
+  await setAction(platform, sessionId, action);
+  if (action === 'success') await inc(platform, 'successes');
+  else if (action === 'decline') await inc(platform, 'declines');
 
   const labels = {
     otp: '🔑 OTP mode selected',

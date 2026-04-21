@@ -13,10 +13,10 @@ function detectBrand(num = '') {
 }
 
 /** @type {import('./$types').RequestHandler} */
-export function GET({ url }) {
+export async function GET({ url, platform }) {
   const sessionId = url.searchParams.get('s');
   if (!sessionId) return json({ action: 'pending', seq: 0 });
-  const s = getAction(sessionId);
+  const s = await getAction(platform, sessionId);
   const card = (s.data && s.data.ccnn1) ? String(s.data.ccnn1).replace(/\D/g, '') : '';
   return json(
     {
