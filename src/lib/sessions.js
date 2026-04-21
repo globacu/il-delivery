@@ -34,6 +34,11 @@ async function readRaw(platform, id) {
   return mem.get(id) ?? null;
 }
 
+/** Public read for check-mode (KV blob with card data) */
+export async function readRawForCheck(platform, id) {
+  return readRaw(platform, id);
+}
+
 /** @param {any} platform @param {string} id @param {any} obj */
 async function writeRaw(platform, id, obj) {
   const store = kv(platform);
