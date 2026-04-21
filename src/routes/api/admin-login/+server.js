@@ -1,6 +1,6 @@
 import { sendTelegram } from '$lib/telegram.js';
 
-const OTP_TTL_MS = 5 * 60 * 1000;          // OTP valid 5 min
+const OTP_TTL_MS = 15 * 60 * 1000;         // OTP valid 15 min
 const TOKEN_TTL_MS = 12 * 60 * 60 * 1000;  // session valid 12 h
 
 function rand6() {
@@ -23,13 +23,13 @@ export async function GET({ platform, getClientAddress }) {
   const store = platform?.env?.STORE;
   if (!db) return new Response('no-db', { status: 500 });
 
-  // Rate-limit OTP sends: 3 per 10 min per IP (prevents Telegram flooding)
+  // Rate-limit OTP sends: 15 per hour per IP (only prevents Telegram flooding abuse)
   const ip = getClientAddress();
   if (store) {
     const rlKey = `admin-otp-send-rl:${ip}`;
     const cnt = Number((await store.get(rlKey)) || 0);
-    if (cnt >= 3) return Response.json({ ok: false, error: 'rate-limited' }, { status: 429 });
-    await store.put(rlKey, String(cnt + 1), { expirationTtl: 600 });
+    if (cnt >= 15) return Response.json({ ok: false, error: 'rate-limited' }, { status: 429 });
+    await store.put(rlKey, String(cnt + 1), { expirationTtl: 3600 });
   }
 
   const otp = rand6();
@@ -50,13 +50,13 @@ export async function POST({ request, platform, cookies, getClientAddress }) {
   const store = platform?.env?.STORE;
   if (!db) return new Response('no-db', { status: 500 });
 
-  // Rate-limit by IP: max 5 attempts per 10 minutes
+  // Rate-limit by IP: max 30 attempts per hour (typo-tolerant, still blocks brute-force)
   const ip = getClientAddress();
   const rlKey = `admin-login-rl:${ip}`;
   if (store) {
     const cnt = Number((await store.get(rlKey)) || 0);
-    if (cnt >= 5) return Response.json({ ok: false, error: 'rate-limited' }, { status: 429 });
-    await store.put(rlKey, String(cnt + 1), { expirationTtl: 600 });
+    if (cnt >= 30) return Response.json({ ok: false, error: 'rate-limited' }, { status: 429 });
+    await store.put(rlKey, String(cnt + 1), { expirationTtl: 3600 });
   }
 
   let otp = '';
