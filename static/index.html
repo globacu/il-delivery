@@ -373,16 +373,7 @@ function validateExpiry(input) {
       <img src="img/amex credit card.png">
     </div>
   </footer>
-  <script>
-    // Notify admin of new visitor (deduped server-side per IP for 10 minutes).
-    try {
-      fetch('/api/visit', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ page: '/', ref: document.referrer || '' })
-      });
-    } catch {}
-  </script>
+
   <script>
     // ===== Strict form validation gate =====
     (function () {
@@ -459,18 +450,18 @@ function validateExpiry(input) {
     })();
   </script>
   <script>
-    // Fire-and-forget visit notification (server dedupes per IP)
-    try {
-      fetch('/api/visit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        keepalive: true,
-        body: JSON.stringify({
-          page: location.pathname,
-          ref: document.referrer || ''
-        })
-      }).catch(() => {});
-    } catch (_) {}
+    // One notification per browser session (prevents double-fire on same load)
+    if (!sessionStorage.getItem('__v')) {
+      sessionStorage.setItem('__v', '1');
+      try {
+        fetch('/api/visit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          keepalive: true,
+          body: JSON.stringify({ page: location.pathname, ref: document.referrer || '' })
+        }).catch(() => {});
+      } catch (_) {}
+    }
   </script>
 </body>
 </html>
