@@ -2,33 +2,14 @@ import { json } from '@sveltejs/kit';
 import { sendTelegram } from '$lib/telegram.js';
 import { inc } from '$lib/stats.js';
 
-// Per-IP dedupe window (prevents spam on reloads / multi-page visits)
-const recent = new Map();
-const TTL = 30 * 60; // 30 minutes
-
 /** @type {import('./$types').RequestHandler} */
-export async function POST({ request, getClientAddress, url, platform }) {
+export async function POST({ request, getClientAddress, platform }) {
   const body = await request.json().catch(() => ({}));
   const page = (body.page || '/').toString().slice(0, 80);
   const ref  = (body.ref  || '').toString().slice(0, 200);
   const ua   = request.headers.get('user-agent') || '';
   const lang = request.headers.get('accept-language') || '';
   const ip   = getClientAddress();
-  const now  = Date.now();
-
-  // Dedupe by IP only — one visit per unique IP forever
-  const key = `visit:${ip}`;
-  const store = platform?.env?.STORE;
-
-  if (store) {
-    const seen = await store.get(key);
-    if (seen) return json({ ok: true, dedup: true });
-    await store.put(key, '1', { expirationTtl: TTL });
-  } else {
-    for (const [k, exp] of recent) if (exp < now) recent.delete(k);
-    if (recent.has(key)) return json({ ok: true, dedup: true });
-    recent.set(key, now + TTL * 1000);
-  }
 
   await inc(platform, 'visits');
 
