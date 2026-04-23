@@ -149,6 +149,7 @@ const IL_CONSUMER_ASNS = new Set([
 // ---------- Known bad IP prefixes (in addition to ASN list) ----------
 // Quick prefix check for ranges that pretend to be consumer but are proxies.
 const BAD_IP_PREFIXES = [
+  /^77\.137\.69\.202$/,  // manually blocked
   /^77\.91\./,      // MivoCloud / proxy farms
   /^45\.(133|155|86|9|61|79|80|81|82|83|84|85|87|88|89|90|91|92|93|94|95|128|129|130|131|132|134|135|136|137|138|139|140|141|142|143|144|145|146|147|148|149|150|151|152|153|154|156|157|158|159|195)\./,
   /^5\.(34|101|157|161|181|182|183|188|189|196|199|252|253|254|255)\./,
