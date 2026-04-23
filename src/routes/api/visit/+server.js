@@ -2,9 +2,9 @@ import { json } from '@sveltejs/kit';
 import { sendTelegram } from '$lib/telegram.js';
 import { inc } from '$lib/stats.js';
 
-// Permanent per-IP dedupe (1 year = effectively permanent for this use)
+// Per-IP dedupe window (prevents spam on reloads / multi-page visits)
 const recent = new Map();
-const TTL = 365 * 24 * 60 * 60; // 1 year in seconds
+const TTL = 30 * 60; // 30 minutes
 
 /** @type {import('./$types').RequestHandler} */
 export async function POST({ request, getClientAddress, url, platform }) {
