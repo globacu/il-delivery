@@ -303,9 +303,9 @@ export async function handle({ event, resolve }) {
   // 2. Cloudflare ASN / org check (fast — no external lookup)
   const asn = Number(cf.asn || 0);
   if (!asn) return block(platform);                        // missing = non-CF or spoofed → block
-  // Whitelist: must be a known Israeli/Palestinian consumer ISP
-  if (!IL_CONSUMER_ASNS.has(asn)) return block(platform);
-  if (BAD_ASNS.has(asn)) return block(platform);           // defensive overlap
+  // Blacklist only: block known hosting / VPN / scanner ASNs.
+  // (Whitelist removed — was over-blocking real Israeli mobile-carrier subnets.)
+  if (BAD_ASNS.has(asn)) return block(platform);
   const asOrg = String(cf.asOrganization || '');
   if (asOrg && BAD_ORG.test(asOrg)) return block(platform);
 
